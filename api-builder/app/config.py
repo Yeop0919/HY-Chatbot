@@ -1,5 +1,6 @@
 import logging
 import re
+import os
 from typing import Literal, List, Annotated, Any, Union, Dict
 
 from pydantic import AnyUrl, BeforeValidator, computed_field, field_validator
@@ -23,8 +24,8 @@ class Settings(BaseSettings):
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     PORT: int = 8000
-    SERVICE_NAME: str = "Python FastAPI Template"
-    SERVICE_CODE: int = 100
+    SERVICE_NAME: str = "공지 챗봇 API"
+    SERVICE_CODE: str = "notice-chatbot"
     MAJOR_VERSION: str = "v1"
     STATUS: str = "dev"
 
@@ -86,10 +87,18 @@ class Settings(BaseSettings):
             return True
 
     # Backend
-    BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = []
+    BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = ["http://localhost:8001", "http://localhost:3000", "http://localhost:8000"]
 
     # Service Config
     X_TOKEN: str = "wisenut"
+    
+    ELASTIC_CLOUD_URL: str = os.getenv("ELASTIC_CLOUD_URL", "https://e398b41cb31146b5adaa38c2c530b10f.us-central1.gcp.cloud.es.io:443")
+    ELASTIC_API_KEY: str = os.getenv("ELASTIC_API_KEY", "b2NlM0NKVUJzb3VEVGw3SEV4WUs6RzRjeUlYeEpTM20yY28tbFZCc0ZNQQ==")
+    PORT: int = int(os.getenv("PORT", 8000))
+    
+    ELASTIC_CLOUD_ID: str = os.getenv("ELASTIC_CLOUD_ID","64fb5a48137c4e20bf19c9ce2d24b372:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJGUzOThiNDFjYjMxMTQ2YjVhZGFhMzhjMmM1MzBiMTBmJDBhZDNjZDEwMjgyMzQ5ZGVhNmU4NmY5YTNhYjFjM2M564fb5a48137c4e20bf19c9ce2d24b372:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJGUzOThiNDFjYjMxMTQ2YjVhZGFhMzhjMmM1MzBiMTBmJDBhZDNjZDEwMjgyMzQ5ZGVhNmU4NmY5YTNhYjFjM2M5")
+    ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME","new_admin")
+    ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "NewSecurePassword123!")
 
 
 settings = Settings()  # type: ignore

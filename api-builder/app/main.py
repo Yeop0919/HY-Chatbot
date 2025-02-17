@@ -1,3 +1,5 @@
+# uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
 import json
 import logging
 import os
@@ -6,7 +8,6 @@ import time
 import typing
 from contextlib import asynccontextmanager
 from uuid import uuid4
-
 import uvicorn
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -18,7 +19,9 @@ from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import HTTPExceptionHandler
+from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.middleware import AddAuthHeaderMiddleware
 from app import handlers
 from app.api.api_router import api_router
 from app.config import settings
@@ -60,7 +63,9 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.logger = setup_logging()  # type: ignore
 
-app.include_router(api_router, dependencies=[Depends(get_token_header)])
+app.include_router(api_router)
+
+app.add_middleware(AddAuthHeaderMiddleware)
 
 app.add_exception_handler(StarletteHTTPException, typing.cast(HTTPExceptionHandler, handlers.http_exception_handler))
 app.add_exception_handler(RequestValidationError,
@@ -77,7 +82,6 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = f"{process_time:.6f} sec"
     return response
 
-
 async def get_request_id(request: Request):
     """요청 ID 생성
 
@@ -92,10 +96,15 @@ async def get_request_id(request: Request):
     request_id = x_request_id if x_request_id else uuid4().hex
     return request_id
 
+# favicon
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return {}
 
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
     request_id = await get_request_id(request)
+    # logger.info(f"🔹 [DEBUG] 요청 헤더 (add_request_id 미들웨어): {request.headers}")  
     with logger.contextualize(request_id=request_id):
         # extra[request_id]가 uuid 로 부여됨
         # logging.debug(f"Start Request")   # 요청 로직 시작: 필요할 경우 사용
@@ -134,7 +143,6 @@ async def redoc_html():
         redoc_js_url="/static/redoc.standalone.js",
     )
 
-
 @app.get("/health")
 def health():
     return {
@@ -167,5 +175,6 @@ if settings.BACKEND_CORS_ORIGINS:
         expose_headers=['X-Request-ID']
     )
 
-if __name__ == '__main__':
-    uvicorn.run(app="main:app", host="0.0.0.0", port=settings.PORT, log_level=settings.log_level)
+# logger.info(f"✅ FastAPI 등록된 API 목록: {[route.path for route in app.routes]}")
+# if __name__ == '__main__':
+#     uvicorn.run(app="main:app", host="0.0.0.0", port=settings.PORT, log_level=settings.log_level)
