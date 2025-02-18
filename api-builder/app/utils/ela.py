@@ -219,24 +219,16 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
 # elastic 클라우드에서 원하는 doc id의 base64 가져오기기
 def search_base64(query: str, size: int = 1):
     """
-    Elasticsearch에서 이미지의 Base64 데이터만 검색하고 반환
+    Elasticsearch에서 이미지의 Base64 데이터만 검색하고 반환 (ID 기반)
     """
     index_name = "image_data"
     es_client = get_es_client()
-    keywords = extract_keywords(query)
 
+    # ✅ `ids` 쿼리로 수정 (match 대신 사용)
     es_query = {
         "query": {
-            "bool": {
-                "must": [
-                    {
-                        "match": {
-                            "_id": {
-                                "query": " ".join(keywords)
-                            }
-                        }
-                    }
-                ],
+            "ids": {
+                "values": [query] if isinstance(query, str) else query  # 단일 ID 또는 리스트 지원
             }
         }
     }
@@ -256,12 +248,12 @@ def search_base64(query: str, size: int = 1):
 
             # `img_base64` 필드만 추출하여 반환
             base64_results = [
-                {"img_base64": hit["_source"]["img_base64"]}
+                hit["_source"]["img_base64"]
                 for hit in hits
                 if "_source" in hit and "img_base64" in hit["_source"]
             ]
 
-            return base64_results
+            return base64_results if base64_results else [{"error": "🔍 검색 결과 없음"}]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]

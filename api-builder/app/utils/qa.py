@@ -1,38 +1,109 @@
-from openai import OpenAI
+
 from app.utils.ela import search_base64
 import os
-os.environ["OPENAI_API_KEY"] = "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"
-OPENAI_API_KEY = os.getenv("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")
 
-def llm_answer(user_query, text_reranked_result, image_reranked_result):
-    openai_client = OpenAI()
-    txt_context = [{"context": result["text"]} for result in text_reranked_result]
-    img_context_ids = [str(result["id"]) for result in image_reranked_result]
+os.environ["OPENAI_API_KEY"] = "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"
+OPENAI_API_KEY = os.getenv("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")
+
+
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_core.messages import HumanMessage
+from langchain.schema.output_parser import StrOutputParser
+from PIL import Image
+from langchain_openai import ChatOpenAI
+import base64
+import io
+def resize_base64_image(base64_string, size=(700, 700)):
+    """
+    Resize an image encoded as a Base64 string
+    """
+    # Decode the Base64 string
+    img_data = base64.b64decode(base64_string)
+    img = Image.open(io.BytesIO(img_data))
+
+    # Resize the image
+    resized_img = img.resize(size, Image.LANCZOS)
+
+    # Save the resized image to a bytes buffer
+    buffered = io.BytesIO()
+    resized_img.save(buffered, format=img.format)
+
+    # Encode the resized image to Base64
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+def make_data_dict(user_query, text_reranked_result, image_reranked_result):
+    txt_context = [ result["text"] for result in text_reranked_result]
+    img_context_ids = [str(result["id"]) for result in image_reranked_result[:2]]
     img_context=[]
     for id in img_context_ids:
         base64=search_base64(id)
-        img_context.append({"image_context":base64})
-    # RAG 체인 구성
-    SYSTEM_PROMPT = """
-    Human: 당신은 AI 어시스턴트입니다. 제공된 문맥적인 단락에서 질문에 대한 답을 찾을 수 있습니다.
+        if base64:
+          img_context.append(base64[0])
+        else:
+            raise Exception("이것은 기본적인 예외 발생 예제입니다.")
+
+    data_dict={
+        "context":{
+            "texts":txt_context,
+            "images":img_context
+
+        },
+        "question":user_query
+    }
+    return data_dict
+
+def img_prompt_func(data_dict):
+    """
+    Join the context into a single string
+    """
+    formatted_texts = "\n".join(data_dict["context"]["texts"])
+    messages = []
+
+    # Adding image(s) to the messages if present
+    if data_dict["context"]["images"]:
+        for image in data_dict["context"]["images"]:
+            image_message = {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+            }
+            messages.append(image_message)
+    text_message = {
+        "type": "text",
+        "text": (
+            "You are an AI assistant capable of analyzing text and images.\n"
+            "You will be given a mixed of text and image(s).\n"
+            "Use this information to provide quality information related to the user question. \n"
+            f"User-provided question: {data_dict['question']}\n\n"
+            "Text :\n"
+            f"{formatted_texts}"
+        ),
+    }
+    messages.append(text_message)
+    return [HumanMessage(content=messages)]
+
+
+    
+def llm_answer(user_query, text_reranked_result, image_reranked_result):
+    """
+    Multi-modal RAG pipeline without RunnableLambda
     """
 
-    USER_PROMPT = f"""
-    다음 정보를 바탕으로 질문에 답하세요
-    텍스트 정보:
-    {txt_context}
-    이미지 정보:
-    {img_context}
-    질문: {user_query}
-    문장으로 답변해주세요. 주어진 질문에만 답변하세요. 답변할 때 질문의 주어를 써주세요.주어진 질문에 대한 답변을 모두 포함하세요.
-    """
-    response = openai_client.chat.completions.create(
-    model="gpt-4o",
-    messages=[
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": USER_PROMPT},
-    ],
-    )
-    return response.choices[0].message.content
+    # Multi-modal LLM
+    model = ChatOpenAI(temperature=0, model="gpt-4o", max_tokens=1024)
+
+    # 1️⃣ 데이터 변환 (make_data_dict)
+    data_dict = make_data_dict(user_query, text_reranked_result, image_reranked_result)
+
+    # 2️⃣ LLM 입력 형식 변환 (img_prompt_func)
+    prompt_messages = img_prompt_func(data_dict)
+
+    # 3️⃣ GPT-4 Vision 실행
+    response = model.invoke(prompt_messages)
+
+    # 4️⃣ 최종 결과 반환
+    return response.content
+
+
+
 
 
