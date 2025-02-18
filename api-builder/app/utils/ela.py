@@ -204,10 +204,10 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            # `img_base64` 필드만 제거하여 반환
-            for hit in hits:
-                if "_source" in hit and "img_base64" in hit["_source"]:
-                    del hit["_source"]["img_base64"]
+            # # `img_base64` 필드만 제거하여 반환
+            # for hit in hits:
+            #     if "_source" in hit and "img_base64" in hit["_source"]:
+            #         del hit["_source"]["img_base64"]
 
             return hits
 
@@ -216,7 +216,58 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
 
     except Exception as e:
         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+# elastic 클라우드에서 원하는 doc id의 base64 가져오기기
+def search_base64(query: str, size: int = 1):
+    """
+    Elasticsearch에서 이미지의 Base64 데이터만 검색하고 반환
+    """
+    index_name = "image_data"
+    es_client = get_es_client()
+    keywords = extract_keywords(query)
 
+    es_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "_id": {
+                                "query": " ".join(keywords)
+                            }
+                        }
+                    }
+                ],
+            }
+        }
+    }
+
+    try:
+        response = requests.get(
+            f"{es_client['url']}/{index_name}/_search",
+            headers=es_client["headers"],
+            json=es_query,
+            params={"size": size},
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            hits = result.get("hits", {}).get("hits", [])
+
+            # `img_base64` 필드만 추출하여 반환
+            base64_results = [
+                {"img_base64": hit["_source"]["img_base64"]}
+                for hit in hits
+                if "_source" in hit and "img_base64" in hit["_source"]
+            ]
+
+            return base64_results
+
+        else:
+            return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
+
+    except Exception as e:
+        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
 
 #===========================================================================================================
 
@@ -234,14 +285,7 @@ def emb_text(text):
     )
 
 milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com", token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
-collection_name = "txt_collection"
 
-milvus_client.create_collection(
-    collection_name=collection_name,
-    dimension=embedding_dim,
-    metric_type="IP",  # Inner product distance
-    consistency_level="Strong",  # Strong consistency level
-)
 
 def milvus_text_search(user_query):
     question = user_query
@@ -296,66 +340,3 @@ def milvus_image_search(user_query):
     except Exception as e:
         return print(f"\n❌ [DEBUG] 검색 중 오류 발생: {e}")  
     
-#===========================================================================================================
-# hybrid search (using tmm)
-
-def tmm_norm_milvus(dense_results):
-    dense_distances = [result["distance"] for result in dense_results]
-    min_distance = -1
-    max_distance = max(dense_distances)
-
-    for result in dense_results:
-        result["normalized_score"] =  (result["distance"] - min_distance) / (max_distance - min_distance)
-    return dense_results
-
-def tmm_norm_elastic(sparse_results):
-    sparse_scores = [result["_score"] for result in sparse_results]
-    min_score = 0
-    max_score = max(sparse_scores)
-    for result in sparse_results:
-            result["normalized_score"] = (result["_score"] - min_score) / (max_score - min_score)
-    return sparse_results
-
-def txt_hybrid_search(dense_results, sparse_results, dense_weight, sparse_weight):
-    combined_results = {}
-    for result in sparse_results:
-        combined_results[str(result["_id"])] = {
-            "text": result['_source']["page_content"],
-            "sparse_score": result["normalized_score"],
-            "dense_score": 0
-            }
-    for result in dense_results:
-        if str(result["id"]) in combined_results:
-            combined_results[str(result["id"])]["dense_score"] = result["normalized_score"]
-        else:
-            combined_results[str(result["id"])] = {
-                "text": result["text"],
-                "sparse_score": 0,
-                "dense_score": result["normalized_score"]
-                }
-    for docid,doc in combined_results.items():
-        doc["final_score"] = sparse_weight * doc["sparse_score"] + dense_weight * doc["dense_score"]
-    final_results= sorted(combined_results.values(), key=lambda x: x["final_score"], reverse=True)
-    return final_results
-
-def img_hybrid_search(dense_results, sparse_results, dense_weight, sparse_weight):
-    combined_results = {}
-    for result in sparse_results:
-        combined_results[str(result["_id"])] = {
-            "image_summary": result['_source']["image_summary"],
-            "sparse_score": result["normalized_score"],
-            "dense_score": 0
-            }
-    for result in dense_results:
-        if str(result["id"]) in combined_results:
-            combined_results[str(result["id"])]["dense_score"] = result["normalized_score"]
-        else:
-            combined_results[str(result["id"])] = {
-                "image_summary": result["img_summary"],
-                "sparse_score": 0,
-                "dense_score": result["normalized_score"]
-                }
-    for docid,doc in combined_results.items():
-        doc["final_score"] = sparse_weight * doc["sparse_score"] + dense_weight * doc["dense_score"]
-    final_results= sorted(combined_results.values(), key=lambda x: x["final_score"], reverse=True)
-    return final_results
