@@ -11,7 +11,14 @@ def tmm_norm_milvus(dense_results):
     return dense_results
 
 def tmm_norm_elastic(sparse_results):
-    sparse_scores = [result["_score"] for result in sparse_results]
+    #sparse_scores = [result["_score"]  for result in sparse_results ]
+    sparse_scores = []
+    for result in sparse_results:
+        try:
+            sparse_scores.append(result["_score"])
+        except KeyError:
+            print(f"🚨 Warning: '_score' 키가 없는 항목 발견! 데이터: {result}")
+        sparse_scores.append(0)  # 기본값 설정
     min_score = 0
     max_score = max(sparse_scores)
     for result in sparse_results:

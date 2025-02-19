@@ -204,11 +204,6 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            # # `img_base64` 필드만 제거하여 반환
-            # for hit in hits:
-            #     if "_source" in hit and "img_base64" in hit["_source"]:
-            #         del hit["_source"]["img_base64"]
-
             return hits
 
         else:

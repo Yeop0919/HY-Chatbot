@@ -19,8 +19,6 @@ class LLMRequest(BaseModel):
     user_query: str
 
 class ChatResponse(BaseModel):
-    final_response_text: List[dict]  
-    final_response_image: List[dict] 
     llm_answer: str
 
 @router.post("/llm_answer", summary="검색 수행 후 답변", description="사용자의 입력을 받아 공지사항 및 이미지 검색 후 llm으로 최종답변 생성")
@@ -59,8 +57,6 @@ async def post_search_results(request: LLMRequest):
 
         print("\n✅ [DEBUG] 검색 성공")  # 성공 로그
         return {
-            "final_response_text": text_reranked_result,
-            "final_response_image": image_reranked_result,
             "llm_text_answer":llm_text_answer
         }
 
