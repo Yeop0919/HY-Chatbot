@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <title>FastAPI 검색 클라이언트</title>
+    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+    <script>
+        Kakao.init('00a14c8dd77d4e2846f5e49ed7113fc7');
+        function shareToKakao() {
+            Kakao.Link.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '지금까지의 대화',
+                    description: '',
+                    imageUrl: 'http://127.0.0.1:5500/images/share-image.png',  
+                    link: {
+                        mobileWebUrl: 'http://127.0.0.1:5500/product-page.html',  
+                        webUrl: 'http://127.0.0.1:5500/product-page.html' 
+                    }
+                },
+                buttons: [
+                    {
+                        title: '웹사이트 가기',
+                        link: {
+                            mobileWebUrl: 'http://127.0.0.1:5500/product-page.html',
+                            webUrl: 'http://127.0.0.1:5500/product-page.html'
+                    }
+                }
+            ]
+            });
+        }    
+
+        function shareToInstagram() {
+            var url = 'https://www.instagram.com/';
+            window.open(url, '_blank');  
+        }
+    </script>
+    <style>
+        body {
+            background-color: #1D2475;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            position: fixed;
+            left: -270px;
+            top: 0;
+            height: 100%;
+            background-color: lightgray;
+            transition: left 0.4s ease-in-out;
+            padding-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding-left: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+        }
+        .sidebar.open {
+            left: 0;
+        }
+        .sidebar-content {
+            margin-top: 30px;
+            width: 100%;
+        }
+        .sidebar a {
+            display: block;
+            padding: 15px;
+            font-size: 18px;
+            text-decoration: none;
+            color: black;
+            text-align: left;
+        }
+        .sidebar a:hover {
+            background-color: #ddd;
+        }
+        .setting-icon {
+            display: none; 
+            position: absolute;
+            bottom: 60px;  
+            right: 20px;   
+            width: 40px;   
+            height: auto;
+            cursor: pointer;
+            z-index: 100;            
+        }
+
+        .sidebar.open .setting-icon {
+            display: block;
+        }
+
+        .sidebar.open .open-btn {
+            filter: none;
+        }
+        
+        .open-btn {
+            position: absolute;
+            top: 15px;
+            width: 40px;
+            cursor: pointer;
+            z-index: 10;
+
+        }
+        .open-btn {
+            position: absolute;
+            top: 15px;
+            width: 40px;
+            cursor: pointer;
+            z-index: 10;
+            filter: brightness(0) saturate(100%) invert(88%) sepia(1%) saturate(0%) hue-rotate(0deg);
+            transition: filter 0.3s ease-in-out;
+        }
+        .open-btn { left: 20px; }
+
+        .home-btn, .share-btn {
+            position: absolute;
+            top: 15px;
+            width: 40px;
+            cursor: pointer;
+            z-index: 10;
+            filter: brightness(0) saturate(100%) invert(88%) sepia(1%) saturate(0%) hue-rotate(0deg);
+        }
+        .home-btn { right: 20px; }
+        .share-btn { right: 85px; }
+
+        body, html {
+            height: 100;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            justify-content: flex-start; 
+            width: 100%;
+            max-width: 800px; 
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            margin: auto; 
+            padding-bottom: 63px;
+        }
+
+        .scrollbar {
+            position: fixed;
+            top: 0;
+            right: 100px;
+            height: 100vh;
+            width: 8px;
+            background-color: #ddd;
+            display: none;
+            z-index: 50;
+        }
+        
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: #888;
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb:hover {
+            background-color: #555;
+        }
+
+        .chat-container:scroll {
+            display: block;
+        }
+
+        .chat-message, .hynang-message {
+            background-color: lightgray;
+            color: black;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            width: 50%;
+            text-align: left;
+            word-wrap: break-word;
+            position: relative;
+        }
+        .chat-message {
+            align-self: flex-end;
+        }
+        .hynang-message {
+            background-color: white;
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 1s ease-in;
+        }
+        .hynang-message img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .time-stamp {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 10px;
+            color: black;
+            opacity: 0.7;
+        }
+
+        .chat-input-container {
+            position: fixed;
+            bottom: 20px;
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .chat-input-container textarea {
+            border: none;
+            flex-grow: 1;
+            font-size: 14px;
+            padding: 8px;
+            outline: none;
+            border-radius: 30px;
+            resize: none;
+            height: 45px;
+            overflow-y: hidden;
+        }
+        .chat-input-container button {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .chat-input-container button img {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .plus-icon {
+            position: absolute;
+            left: 28px;
+            bottom: 10px;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+        #share-menu {
+            position: absolute;
+            display: none;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 20;
+        }
+        #share-menu div {
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: black;
+            text-align: center;
+            white-space: nowrap;
+        }
+        #share-menu div:hover {
+            background-color: #f0f0f0;
+        }
+        #file-list-container {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            overflow: hidden;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 10px;
+            background: #f0f0f0;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+        .file-name {
+            color: black; 
+        }
+        .file-item span {
+            flex-grow: 1;
+            font-size: 14px;
+        }
+
+        .remove-btn {
+            background: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            text-align: center;
+            margin-left: 8px;
+        }
+        .remove-btn:hover {
+            background: darkred;
+        }
+        .new-chat-btn {
+            position: absolute;
+            top: 13px;
+            right: 148px; 
+            width: 45px; 
+            cursor: pointer; 
+            filter: brightness(0) invert(1); 
+            transition: filter 0.3s ease-in-out; 
+        }
+        .new-chat-btn:hover {
+            filter: brightness(0.8) invert(1); 
+        }
+    </style>
+</head>
+<body>
+    <img src="List.png" alt="Sidebar Icon" class="open-btn" onclick="toggleSidebar()">
+    <div class="share-container">
+        <img src="New.png" alt="New Chat" class="new-chat-btn" onclick="resetChat()">
+        <img src="Share.png" alt="Share Icon" class="share-btn" onclick="toggleShareMenu()">
+        <div id="share-menu">
+            <div onclick="shareToKakao()" style="display: flex; align-items: center; line-height: 1.5;">
+                <img src="Kakaotalk.png" alt="KakaoTalk Icon" style="width: 20px; height: 20px; margin-right: 10px;">
+                <span style="line-height: 1.8;">카카오톡 공유</span>
+            </div>
+            <div onclick="shareToInstagram()" style="display: flex; align-items: center; line-height: 1.5;">
+                <img src="Instagram.png" alt="Instagram Icon" style="width: 20px; height: 20px; margin-right: 10px;">
+                <span style="line-height: 1.8;">인스타그램 공유</span>
+            </div>
+        </div>
+    </div>
+    <img src="Home.png" alt="Home Icon" class="home-btn" onclick="location.href='index.html'">
+
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-content">
+            <a href="#">오늘의 대화</a>
+            <a href="#">어제의 대화</a>
+            <a href="#">이전 대화 보기</a>
+        </div>
+        <img src="Setting.png" alt="Settings" class="setting-icon" onclick="location.href='관리자화면.html'">
+    </div>
+    
+    <div class="chat-container" id="chat-container"></div>
+
+    <div class="search-container">
+        <div class="search-results">
+            <h3>🔍 검색 결과</h3>
+            <p id="searchResultText"></p>
+        
+            <h3>🖼️ 검색된 이미지</h3>
+            <img id="searchResultImage" style="max-width: 400px; display: none;">
+        
+            <h3>🤖 LLM 응답</h3>
+            <p id="llmResponse"></p>
+        </div>
+        <div id="share-menu" style="display: none; position: absolute; bottom: 60px; right: 20px; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);">
+            <button onclick="shareToKakao()">카카오톡 공유</button>
+            <button onclick="shareToInstagram()">인스타그램 공유</button>
+        </div>
+        <img src="Plus.png" alt="Plus Icon" class="plus-icon" onclick="document.getElementById('file-input').click();">
+        <input type="file" id="file-input" multiple onchange="displayFileList(event)" style="display: none;">
+        <div id="file-list-container"></div>
+        <input type="text" id="queryInput" placeholder="검색어 입력">
+        <button type="button" onclick="sendQuery()">
+            <img src="Go.png" alt="Search Icon">
+        </button>
+    </div>
+
+    <script>
+        const scrollbar = document.querySelector('.scrollbar');
+        const chatContainer = document.querySelector('.chat-container');
+
+        if (scrollbar && chatContainer) {
+            chatContainer.addEventListener('scroll', function () {
+        if (chatContainer.scrollHeight > chatContainer.clientHeight) {
+            scrollbar.style.display = 'block';
+        } else {
+            scrollbar.style.display = 'none';
+        }
+    });
+}
+        function toggleSidebar() {
+            var sidebar = document.getElementById("sidebar");
+            var openBtn = document.querySelector(".open-btn");
+
+            sidebar.classList.toggle("open");
+
+            if (sidebar.classList.contains("open")) {
+                openBtn.style.filter = "none";
+            } else {
+                openBtn.style.filter = "brightness(0) saturate(100%) invert(88%) sepia(1%) saturate(0%) hue-rotate(0deg)";
+            }
+        }
+
+        let selectedFiles = []; 
+
+        function displayFileList(event) {
+            var fileListContainer = document.getElementById("file-list-container");
+            fileListContainer.innerHTML = ""; 
+
+            selectedFiles = Array.from(event.target.files); 
+            updateFileInput(); 
+
+            selectedFiles.forEach((file, index) => {
+                let fileDiv = document.createElement("div");
+                fileDiv.classList.add("file-item");
+
+                let fileName = document.createElement("span");
+                fileName.textContent = file.name;
+                fileName.style.color = "black"; 
+
+                let removeBtn = document.createElement("button");
+                removeBtn.classList.add("remove-btn");
+                removeBtn.textContent = "X";
+
+                
+                removeBtn.onclick = function () {
+                    removeFile(index);
+                };
+
+                fileDiv.appendChild(fileName);
+                fileDiv.appendChild(removeBtn);
+                fileListContainer.appendChild(fileDiv);
+            });
+        }
+
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1); 
+            updateFileInput(); 
+            displayFileList({ target: document.getElementById("file-input") }); 
+        }
+
+        
+        function updateFileInput() {
+            let dataTransfer = new DataTransfer();
+
+            selectedFiles.forEach(file => {
+                dataTransfer.items.add(file);
+            });
+
+            document.getElementById("file-input").files = dataTransfer.files;
+        }
+
+        function getCurrentTime() {
+            let now = new Date();
+            return now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0');
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputField = document.getElementById("queryInput");
+            const searchButton = document.querySelector(".search-container button"); // 전송 버튼 선택
+
+            console.log("✅ [DEBUG] inputField:", inputField);
+            console.log("✅ [DEBUG] searchButton:", searchButton);
+
+            if (inputField) {
+                inputField.addEventListener("keydown", function(event) {
+                    if (event.key === "Enter" && !event.shiftKey) {
+                        event.preventDefault();
+                        console.log("🔹 Enter 키 감지됨");
+                        sendQuery();
+                    }
+                });
+            } else {
+                console.error("❌ queryInput을 찾을 수 없습니다!");
+            }
+
+            if (searchButton) {
+                searchButton.addEventListener("click", function() {
+                    console.log("🔹 검색 버튼 클릭됨");
+                    sendQuery();
+                });
+            } else {
+                console.error("❌ 검색 버튼을 찾을 수 없습니다!");
+            }
+        });
+
+
+
+
+        function scrollLastMessageToInput() {
+            const chatContainer = document.getElementById("chat-container");
+            const lastMessage = chatContainer.lastElementChild;
+
+            if (!lastMessage) return;
+
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+        
+        
+
+            
+        let responseText = "";
+
+        if (fileList.length > 0) {
+            responseText += `<br><b>📎 첨부 파일 확인 중:</b><br>`;
+            fileList.forEach(file => {
+                responseText += `<a href="#" style="color: blue;">${file}</a><br>`;
+            });
+
+            if (!query) {
+                responseText = "📂 파일을 업로드했습니다. 검색어도 입력해 주세요!";
+            }
+        }
+
+        return responseText;
+
+
+
+        function toggleShareMenu() {
+            var menu = document.getElementById("share-menu");
+            var shareBtn = document.querySelector(".share-btn");
+
+            if (menu.style.display === "none" || menu.style.display === "") {
+                var rect = shareBtn.getBoundingClientRect();
+
+                menu.style.top = rect.bottom + window.scrollY + 10 + "px";  
+                menu.style.left = (rect.left - 65) + "px"; 
+
+                menu.style.display = "block"; 
+            } else {
+                menu.style.display = "none";
+            }
+        }
+        window.onload = function () {
+            console.log("검색 페이지 로드 완료");
+
+            const scrollbar = document.querySelector('.scrollbar');
+            if (scrollbar) {
+                scrollbar.style.right = "10px";
+            }
+        };
+
+        window.addEventListener("beforeunload", function () {
+            const chatHistory = document.getElementById("chat-container").innerHTML;
+            sessionStorage.setItem("chatHistory", chatHistory);
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const chatContainer = document.querySelector(".chat-container");
+
+            chatContainer.addEventListener("wheel", function(event) {
+                chatContainer.scrollTop += event.deltaY * 1; 
+                event.preventDefault(); 
+            });
+        });
+</script>
+
+<script>
+        window.sendQuery = async function() {
+    console.log("✅ [DEBUG] sendQuery 실행됨");
+
+    const queryInput = document.getElementById("queryInput");
+    if (!queryInput) {
+        console.error("❌ [ERROR] queryInput 요소가 없습니다!");
+        return;
+    }
+
+    const query = queryInput.value.trim();
+    console.log("🔹 입력된 검색어:", query);
+
+    if (!query) {
+        alert("검색어를 입력하세요!");
+        return;
+    }
+
+    try {
+        console.log("🔹 검색 요청을 서버로 전송 중...");
+
+        const response = await fetch("http://211.39.140.39:27500/rest/llm_answer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_query: query })
+        });
+
+        console.log("✅ [DEBUG] 서버 응답 수신 완료");
+
+        if (!response.ok) {
+            throw new Error(`서버 오류: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("✅ [DEBUG] 서버 응답 데이터:", data);
+
+        document.getElementById("searchResultText").innerText = `🔍 검색 결과: ${data.final_response_text || "검색 결과 없음"}`;
+        document.getElementById("llmResponse").innerText = `🤖 LLM 응답: ${data.llm_text_answer || "LLM 응답 없음"}`;
+
+    } catch (error) {
+        console.error("❌ 검색 요청 실패:", error);
+        alert("❌ 검색 요청 중 오류가 발생했습니다.");
+    }
+
+    queryInput.value = "";
+};
+
+</script>
+
+</body>
+</html>
+

@@ -40,7 +40,7 @@ def make_data_dict(user_query, text_reranked_result, image_reranked_result):
         if base64:
           img_context.append(base64[0])
         else:
-            raise Exception("이것은 기본적인 예외 발생 예제입니다.")
+            raise Exception("search_base64 함수 문제.")
 
     data_dict={
         "context":{

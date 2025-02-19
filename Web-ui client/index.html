@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교 공지 챗봇</title>
+    <style>
+        body {
+            background-color: #1D2475;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 60px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            opacity: 0;
+            animation: fadeIn 1.5s forwards;
+            animation-delay: 0.5s;
+        }
+        .center-icon {
+            width: 100px;
+            margin-bottom: 30px;
+        }
+        .fade-text {
+            opacity: 0;
+            font-size: 20px;
+            font-weight: lighter;
+            animation: fadeIn 1.5s forwards;
+        }
+        .fade-text:nth-child(1) { animation-delay: 1.5s; }
+        .fade-text:nth-child(2) { animation-delay: 2.5s; }
+        .fade-text:nth-child(3) { animation-delay: 3.5s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chatbot-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background-color: lightgray;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .chatbot-btn:hover {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <img src="HYU_symbol_basic_png.png" alt="HYU Logo" class="logo">
+    <div class="title">정보사회미디어학과 공지 챗봇</div>
+    <img src="hnyang2.ico" alt="Chatbot Icon" class="center-icon">
+    <div>
+        <p class="fade-text">학교에서 제공한 공지가 궁금하냥?</p>
+        <p class="fade-text">찾고 싶은 정보가 있는거냥?</p>
+        <p class="fade-text">내가 다 알려주겠다냥!</p>
+    </div>
+    <button class="chatbot-btn" onclick="location.href='메인화면.html'">챗봇 시작하기</button>
+</body>
+</html>
