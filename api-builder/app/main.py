@@ -1,4 +1,4 @@
-# uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+# uvicorn app.main:app --host 0.0.0.0 --port 27500 --reload
 
 import json
 import logging
@@ -167,7 +167,8 @@ if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
-            str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS
+            # str(origin).strip("/") for origin in settings.BACKEND_CORS_ORIGINS
+            "*"
         ],
         allow_credentials=True,
         allow_methods=["*"],

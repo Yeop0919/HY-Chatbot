@@ -3,7 +3,7 @@ import re
 import os
 import json
 from datetime import datetime, timedelta
-from konlpy.tag import Okt, Komoran
+from konlpy.tag import Okt,Komoran
 from app.config import settings
 import requests
 from pymilvus import MilvusClient
@@ -36,7 +36,6 @@ def check_elasticsearch_connection():
 
 check_elasticsearch_connection()
 
-
 komoran = Komoran()
 def extract_keywords(query: str):
     """
@@ -52,8 +51,6 @@ def extract_keywords(query: str):
                 keywords.append(word)
 
     return keywords
-
-
 ### 날짜 추출 함수 (텍스트)
 def extract_date_from_query(query: str):
     """
@@ -100,9 +97,7 @@ def img_extract_date_from_query(query: str):
 
 ### Elasticsearch 클라이언트 생성
 def get_es_client():
-    """
-    새로운 Elasticsearch 클라이언트 생성 (API Key 인증)
-    """
+    """ 새로운 Elasticsearch 클라이언트 생성 (API Key 인증) """
     headers = {
         "Authorization": f"ApiKey {settings.ELASTIC_API_KEY}",
         "X-Token": settings.X_TOKEN
@@ -114,10 +109,8 @@ def get_es_client():
     }
 
 
-def search_text_es(query: str, size: int = 10):
-    """
-    Elasticsearch에서 본문만 검색하고 BM25 점수만 반환
-    """
+def search_text_es(query: str, size: int = 5):
+    """ Elasticsearch에서 본문만 검색하고 BM25 점수만 반환 """
     index_name = "text_data"
     es_client = get_es_client()
     keywords = extract_keywords(query)
@@ -170,10 +163,7 @@ def search_text_es(query: str, size: int = 10):
 
 
 
-def search_image_es(query: str, size: int = 10):
-    """
-    Elasticsearch에서 이미지 요약만 검색하고 BM25 점수만 반환
-    """
+def search_image_es(query: str, size: int = 5, return_field: str = "image_summary"):
     index_name = "image_data"
     es_client = get_es_client()
     keywords = extract_keywords(query)
@@ -214,11 +204,6 @@ def search_image_es(query: str, size: int = 10):
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            # `img_base64` 필드만 제거하여 반환
-            for hit in hits:
-                if "_source" in hit and "img_base64" in hit["_source"]:
-                    del hit["_source"]["img_base64"]
-
             return hits
 
         else:
@@ -226,7 +211,50 @@ def search_image_es(query: str, size: int = 10):
 
     except Exception as e:
         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+# elastic 클라우드에서 원하는 doc id의 base64 가져오기기
+def search_base64(query: str, size: int = 1):
+    """
+    Elasticsearch에서 이미지의 Base64 데이터만 검색하고 반환 (ID 기반)
+    """
+    index_name = "image_data"
+    es_client = get_es_client()
 
+    # ✅ `ids` 쿼리로 수정 (match 대신 사용)
+    es_query = {
+        "query": {
+            "ids": {
+                "values": [query] if isinstance(query, str) else query  # 단일 ID 또는 리스트 지원
+            }
+        }
+    }
+
+    try:
+        response = requests.get(
+            f"{es_client['url']}/{index_name}/_search",
+            headers=es_client["headers"],
+            json=es_query,
+            params={"size": size},
+            timeout=30
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            hits = result.get("hits", {}).get("hits", [])
+
+            # `img_base64` 필드만 추출하여 반환
+            base64_results = [
+                hit["_source"]["img_base64"]
+                for hit in hits
+                if "_source" in hit and "img_base64" in hit["_source"]
+            ]
+
+            return base64_results if base64_results else [{"error": "🔍 검색 결과 없음"}]
+
+        else:
+            return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
+
+    except Exception as e:
+        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
 
 #===========================================================================================================
 
@@ -244,14 +272,7 @@ def emb_text(text):
     )
 
 milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com", token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
-collection_name = "txt_collection"
 
-milvus_client.create_collection(
-    collection_name=collection_name,
-    dimension=embedding_dim,
-    metric_type="IP",  # Inner product distance
-    consistency_level="Strong",  # Strong consistency level
-)
 
 def milvus_text_search(user_query):
     question = user_query
@@ -305,3 +326,4 @@ def milvus_image_search(user_query):
             return dense_results
     except Exception as e:
         return print(f"\n❌ [DEBUG] 검색 중 오류 발생: {e}")  
+    

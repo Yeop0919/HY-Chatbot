@@ -112,4 +112,3 @@ async def get_current_user(api_key: str = settings.ELASTIC_API_KEY):
 # debug_api_key()
 
 
-
