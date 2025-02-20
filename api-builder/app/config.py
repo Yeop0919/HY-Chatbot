@@ -87,7 +87,7 @@ class Settings(BaseSettings):
             return True
 
     # Backend
-    BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = ["http://localhost:8001", "http://localhost:3000", "http://localhost:8000"]
+    BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = ["http://localhost:8001", "http://localhost:3000", "http://localhost:8000", "http://localhost:27500"]
 
     # Service Config
     X_TOKEN: str = "wisenut"

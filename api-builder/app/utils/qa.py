@@ -1,0 +1,109 @@
+
+from app.utils.ela import search_base64
+import os
+
+os.environ["OPENAI_API_KEY"] = "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"
+OPENAI_API_KEY = os.getenv("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")
+
+
+from langchain_core.runnables import RunnableLambda, RunnablePassthrough
+from langchain_core.messages import HumanMessage
+from langchain.schema.output_parser import StrOutputParser
+from PIL import Image
+from langchain_openai import ChatOpenAI
+import base64
+import io
+def resize_base64_image(base64_string, size=(700, 700)):
+    """
+    Resize an image encoded as a Base64 string
+    """
+    # Decode the Base64 string
+    img_data = base64.b64decode(base64_string)
+    img = Image.open(io.BytesIO(img_data))
+
+    # Resize the image
+    resized_img = img.resize(size, Image.LANCZOS)
+
+    # Save the resized image to a bytes buffer
+    buffered = io.BytesIO()
+    resized_img.save(buffered, format=img.format)
+
+    # Encode the resized image to Base64
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+def make_data_dict(user_query, text_reranked_result, image_reranked_result):
+    txt_context = [ result["text"] for result in text_reranked_result]
+    img_context_ids = [str(result["id"]) for result in image_reranked_result[:2]]
+    img_context=[]
+    for id in img_context_ids:
+        base64=search_base64(id)
+        if base64:
+          img_context.append(base64[0])
+        else:
+            raise Exception("이것은 기본적인 예외 발생 예제입니다.")
+
+    data_dict={
+        "context":{
+            "texts":txt_context,
+            "images":img_context
+
+        },
+        "question":user_query
+    }
+    return data_dict
+
+def img_prompt_func(data_dict):
+    """
+    Join the context into a single string
+    """
+    formatted_texts = "\n".join(data_dict["context"]["texts"])
+    messages = []
+
+    # Adding image(s) to the messages if present
+    if data_dict["context"]["images"]:
+        for image in data_dict["context"]["images"]:
+            image_message = {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{image}"},
+            }
+            messages.append(image_message)
+    text_message = {
+        "type": "text",
+        "text": (
+            "You are an AI assistant capable of analyzing text and images.\n"
+            "You will be given a mixed of text and image(s).\n"
+            "Use this information to provide quality information related to the user question. \n"
+            f"User-provided question: {data_dict['question']}\n\n"
+            "Text :\n"
+            f"{formatted_texts}"
+        ),
+    }
+    messages.append(text_message)
+    return [HumanMessage(content=messages)]
+
+
+    
+def llm_answer(user_query, text_reranked_result, image_reranked_result):
+    """
+    Multi-modal RAG pipeline without RunnableLambda
+    """
+
+    # Multi-modal LLM
+    model = ChatOpenAI(temperature=0, model="gpt-4o", max_tokens=1024)
+
+    # 1️⃣ 데이터 변환 (make_data_dict)
+    data_dict = make_data_dict(user_query, text_reranked_result, image_reranked_result)
+
+    # 2️⃣ LLM 입력 형식 변환 (img_prompt_func)
+    prompt_messages = img_prompt_func(data_dict)
+
+    # 3️⃣ GPT-4 Vision 실행
+    response = model.invoke(prompt_messages)
+
+    # 4️⃣ 최종 결과 반환
+    return response.content
+
+
+
+
+

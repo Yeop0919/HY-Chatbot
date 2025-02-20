@@ -1,4 +1,5 @@
-# hybrid
+#===========================================================================================================
+# hybrid search (using tmm)
 
 def tmm_norm_milvus(dense_results):
     dense_distances = [result["distance"] for result in dense_results]
@@ -10,7 +11,14 @@ def tmm_norm_milvus(dense_results):
     return dense_results
 
 def tmm_norm_elastic(sparse_results):
-    sparse_scores = [result["_score"] for result in sparse_results]
+    #sparse_scores = [result["_score"]  for result in sparse_results ]
+    sparse_scores = []
+    for result in sparse_results:
+        try:
+            sparse_scores.append(result["_score"])
+        except KeyError:
+            print(f"🚨 Warning: '_score' 키가 없는 항목 발견! 데이터: {result}")
+        sparse_scores.append(0)  # 기본값 설정
     min_score = 0
     max_score = max(sparse_scores)
     for result in sparse_results:
@@ -43,6 +51,7 @@ def img_hybrid_search(dense_results, sparse_results, dense_weight, sparse_weight
     combined_results = {}
     for result in sparse_results:
         combined_results[result["_id"]] = {
+            "id": result["_id"],
             "img_summary": result["_source"]["image_summary"],
             "sparse_score": result["normalized_score"],
             "dense_score": 0
@@ -52,6 +61,7 @@ def img_hybrid_search(dense_results, sparse_results, dense_weight, sparse_weight
             combined_results[str(result["id"])]["dense_score"] = result["normalized_score"]
         else:
             combined_results[str(result["id"])] = {
+                "id": str(result['id']),
                 "img_summary": result["img_summary"],
                 "sparse_score": 0,
                 "dense_score": result["normalized_score"]
