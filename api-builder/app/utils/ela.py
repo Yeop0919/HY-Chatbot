@@ -51,6 +51,7 @@ def extract_keywords(query: str):
                 keywords.append(word)
 
     return keywords
+
 ### 날짜 추출 함수 (텍스트)
 def extract_date_from_query(query: str):
     """
@@ -152,15 +153,25 @@ def search_text_es(query: str, size: int = 5):
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            return hits if hits else [{"error": "❌ 검색 결과가 없습니다."}]
+            # 검색 결과가 없을 경우 `_score: 1e-6` 추가
+            return hits if hits else [{
+                "_index": f"{index_name}",
+                "_id": "-1",
+                "_score": 1e-6,
+                "_source": {
+                    "page_content": "검색된 공지가 없습니다.",
+                    "metadata":{
+                        "doc_name": "no_result",
+                        "date": "0000-00"
+                    }
+                }
+            }]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
 
     except Exception as e:
         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
-
-
 
 
 def search_image_es(query: str, size: int = 5, return_field: str = "image_summary"):
@@ -204,13 +215,28 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            return hits
+            # 검색 결과가 없을 경우 `_score: 1e-6` 추가
+            return hits if hits else [{
+                "_index": f"{index_name}",
+                "_id": "-1",
+                "_score": 1e-6,
+                "_source": {
+                    "image_summary": "검색된 공지가 없습니다.",
+                    "img_base64": "공지가 없어요",
+                    "metadata":{
+                        "doc_name": "no_result",
+                        "date": "0000-00"
+                    }
+                }
+            }]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
 
     except Exception as e:
         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+
+
 # elastic 클라우드에서 원하는 doc id의 base64 가져오기기
 def search_base64(query: str, size: int = 1):
     """
@@ -219,7 +245,7 @@ def search_base64(query: str, size: int = 1):
     index_name = "image_data"
     es_client = get_es_client()
 
-    # ✅ `ids` 쿼리로 수정 (match 대신 사용)
+    # `ids` 쿼리로 수정 (match 대신 사용)
     es_query = {
         "query": {
             "ids": {
@@ -243,18 +269,18 @@ def search_base64(query: str, size: int = 1):
 
             # `img_base64` 필드만 추출하여 반환
             base64_results = [
-                hit["_source"]["img_base64"]
+                hit["_source"].get("img_base64", "")
                 for hit in hits
                 if "_source" in hit and "img_base64" in hit["_source"]
             ]
 
-            return base64_results if base64_results else [{"error": "🔍 검색 결과 없음"}]
+            return base64_results if base64_results else [None]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
 
     except Exception as e:
-        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+        return [{"error": f"❌ base64 검색 중 오류 발생: {str(e)}"}]
 
 #===========================================================================================================
 
@@ -299,7 +325,7 @@ def milvus_text_search(user_query):
         else:
             return dense_results
     except Exception as e:
-        return print(f"\n❌ [DEBUG] 검색 중 오류 발생: {e}")  
+        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")  
     
 def milvus_image_search(user_query):
     question = user_query
@@ -325,5 +351,5 @@ def milvus_image_search(user_query):
         else:
             return dense_results
     except Exception as e:
-        return print(f"\n❌ [DEBUG] 검색 중 오류 발생: {e}")  
+        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")  
     

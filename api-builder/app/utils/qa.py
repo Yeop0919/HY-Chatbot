@@ -73,6 +73,8 @@ def img_prompt_func(data_dict):
             "You are an AI assistant capable of analyzing text and images.\n"
             "You will be given a mixed of text and image(s).\n"
             "Use this information to provide quality information related to the user question. \n"
+            "If there are no search results, please respond by saying '미안하다냥. 찾는 정보가 없는 것 같다냥!. \n"
+            "Please answer in Korean.\n"
             f"User-provided question: {data_dict['question']}\n\n"
             "Text :\n"
             f"{formatted_texts}"
@@ -103,7 +105,14 @@ def llm_answer(user_query, text_reranked_result, image_reranked_result):
     # 4️⃣ 최종 결과 반환
     return response.content
 
+# import markdown
 
-
-
-
+# def process_response(response):
+#     """
+#     LLM 응답을 Markdown에서 HTML로 변환하여 반환하는 함수
+#     """
+#     if hasattr(response, "content"):
+#         # Markdown을 HTML로 변환
+#         response.content = markdown.markdown(response.content, extensions=['fenced_code'])
+    
+#     return response
