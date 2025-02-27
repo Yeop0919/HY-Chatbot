@@ -26,7 +26,7 @@ markdown_extensions:
         - name: mermaid
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
-  # admonition
+          # admonition
   - admonition
   - pymdownx.details
   - pymdownx.superfences
@@ -39,14 +39,14 @@ nav:
   - Quick Start: './start/quick-start.md'
   - Getting Started: './start/getting-started.md'
   - Guide:
-    - Project Structure: './guide/project-structure.md'
-    - GitLab CI/CD pipeline: './guide/ci-cd.md'
-    - Docker: './guide/docker.md'
-    - Gunicorn: './guide/gunicorn.md'
-    - Pre-commit: './guide/pre-commit.md'
-    - Automation Bot: './guide/automation-bot.md'
-    - Mkdocs: './guide/mkdocs.md'
-    - Secret Detection: './guide/secret-detection.md'
+      - Project Structure: './guide/project-structure.md'
+      - GitLab CI/CD pipeline: './guide/ci-cd.md'
+      - Docker: './guide/docker.md'
+      - Gunicorn: './guide/gunicorn.md'
+      - Pre-commit: './guide/pre-commit.md'
+      - Automation Bot: './guide/automation-bot.md'
+      - Mkdocs: './guide/mkdocs.md'
+      - Secret Detection: './guide/secret-detection.md'
   - API Docs: './api/docs.html'
 
 plugins:
@@ -60,5 +60,5 @@ plugins:
       css_dir: css
       javascript_dir: js
   - search:
-      lang: ['en', 'ko']  # 다국어 지원 (한국어 검색 가능하게 설정)
+      lang: [ 'en', 'ko' ]  # 다국어 지원 (한국어 검색 가능하게 설정)
       separator: '[\s\-]+'

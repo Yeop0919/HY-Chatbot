@@ -8,7 +8,17 @@ import time
 import typing
 from contextlib import asynccontextmanager
 from uuid import uuid4
+
 import uvicorn
+from app import handlers
+from app.api.api_router import api_router
+from app.config import settings
+from app.constants import DESCRIPTION, SUMMARY, LICENSE_INFO
+from app.dependencies import get_token_header
+from app.exceptions.base import ApplicationError
+from app.log import setup_logging
+from app.middleware import AddAuthHeaderMiddleware
+from app.version import GIT_REVISION, GIT_BRANCH, BUILD_DATE, GIT_SHORT_REVISION, VERSION, get_current_datetime
 from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html, get_redoc_html
@@ -17,19 +27,9 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import HTTPExceptionHandler
-from starlette.middleware.base import BaseHTTPMiddleware
-
-from app.middleware import AddAuthHeaderMiddleware
-from app import handlers
-from app.api.api_router import api_router
-from app.config import settings
-from app.constants import DESCRIPTION, SUMMARY, LICENSE_INFO
-from app.dependencies import get_token_header
-from app.exceptions.base import ApplicationError
-from app.log import setup_logging
-from app.version import GIT_REVISION, GIT_BRANCH, BUILD_DATE, GIT_SHORT_REVISION, VERSION, get_current_datetime
 
 # 앱 구동 성공 여부와 상관없이 앱 정보 출력
 print(json.dumps(
@@ -82,6 +82,7 @@ async def add_process_time_header(request: Request, call_next):
     response.headers["X-Process-Time"] = f"{process_time:.6f} sec"
     return response
 
+
 async def get_request_id(request: Request):
     """요청 ID 생성
 
@@ -96,10 +97,12 @@ async def get_request_id(request: Request):
     request_id = x_request_id if x_request_id else uuid4().hex
     return request_id
 
+
 # favicon
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return {}
+
 
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):
@@ -142,6 +145,7 @@ async def redoc_html():
         title=app.title + " - ReDoc",
         redoc_js_url="/static/redoc.standalone.js",
     )
+
 
 @app.get("/health")
 def health():

@@ -1,8 +1,7 @@
-from fastapi.testclient import TestClient
-
 from app.config import settings
 from app.exceptions.service import InvalidItemStock, ItemNotFoundError
 from app.main import app
+from fastapi.testclient import TestClient
 from tests.check_common_conditions import check_success_common_conditions, check_failed_common_conditions
 
 client = TestClient(app)

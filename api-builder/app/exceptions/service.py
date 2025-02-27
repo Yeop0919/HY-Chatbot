@@ -2,10 +2,9 @@
 서비스 자체 로직에 관한 커스텀 예외처리 작성
 """
 
-from starlette import status
-
 from app.config import settings
 from app.exceptions.base import ApplicationError
+from starlette import status
 
 
 class TokenValidationError(ApplicationError):

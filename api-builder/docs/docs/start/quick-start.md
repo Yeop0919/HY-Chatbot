@@ -8,20 +8,22 @@
 
 1. GitLab `Create new project` 을 통해 새로운 프로젝트 생성
 2. `Create from template` 선택    
-    ![create from template png](../images/create-from-template.png)
+   ![create from template png](../images/create-from-template.png)
 3. `Group` 선택
-4. **FastAPI**에서 `Use template` 선택 
+4. **FastAPI**에서 `Use template` 선택
    ![fastapi use template png](../images/fastapi-use-template.png)
 5. _Project name, Project description (optional)_ 등을 작성하고 `Create project` 선택
 
 ## 1. Install Requirements
 
 ### macOS and Linux
+
 ```bash
 $ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### Windows
+
 ```powershell
 $ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
@@ -91,9 +93,11 @@ $ docker run -d --rm --name python-fastapi-template -p 8000:8000 -e X_TOKEN=wise
 ```
 
 ### 참고
+
 $HOME 경로에서 `python app/version.py`를 실행하여 `version_info.py` 파일을 생성한 후 진행하셔야 정상적으로 빌드 후 실행이 가능합니다.    
 만약 필요 없다면, 아래와 같이 `Dockerfile`을 수정하면 됩니다.    
 (단, openapi docs에 누락된 정보가 있을 수 있습니다. )
+
 ```dockerfile
 # BEFORE
 COPY pyproject.toml version_info.py .env ./

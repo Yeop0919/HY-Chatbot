@@ -1,14 +1,14 @@
-from elasticsearch import Elasticsearch
-import re
 import os
-import json
+import re
 from datetime import datetime, timedelta
-from konlpy.tag import Okt,Komoran
-from app.config import settings
+
 import requests
-from pymilvus import MilvusClient
+from app.config import settings
+from elasticsearch import Elasticsearch
+from konlpy.tag import Okt, Komoran
 from openai import OpenAI
-from typing import List
+from pymilvus import MilvusClient
+
 
 ### Elasticsearch 연결 체크
 def check_elasticsearch_connection():
@@ -34,9 +34,12 @@ def check_elasticsearch_connection():
         print(f"❌ Elasticsearch 요청 오류: {str(e)}")
         return {"status": "error", "error": f"Elasticsearch 요청 오류: {str(e)}"}
 
+
 check_elasticsearch_connection()
 
 komoran = Komoran()
+
+
 def extract_keywords(query: str):
     """
     한국어 문장에서 주요 키워드 추출 (명사, 동사, 형용사)
@@ -51,6 +54,8 @@ def extract_keywords(query: str):
                 keywords.append(word)
 
     return keywords
+
+
 ### 날짜 추출 함수 (텍스트)
 def extract_date_from_query(query: str):
     """
@@ -70,6 +75,7 @@ def extract_date_from_query(query: str):
             return f"{year}-01", f"{year}-12"
 
     return None, None
+
 
 ### 날짜 추출 함수 (이미지)
 def img_extract_date_from_query(query: str):
@@ -94,6 +100,7 @@ def img_extract_date_from_query(query: str):
             return f"{year}-01-01", f"{year}-12-31"
 
     return None, None
+
 
 ### Elasticsearch 클라이언트 생성
 def get_es_client():
@@ -134,7 +141,7 @@ def search_text_es(query: str, size: int = 5):
                         }
                     }
                 ],
-                "filter": filter_conditions if filter_conditions else []  
+                "filter": filter_conditions if filter_conditions else []
             }
         }
     }
@@ -143,7 +150,7 @@ def search_text_es(query: str, size: int = 5):
         response = requests.get(
             f"{es_client['url']}/{index_name}/_search",
             headers=es_client["headers"],
-            json=es_query, 
+            json=es_query,
             params={"size": size},
             timeout=30
         )
@@ -152,15 +159,25 @@ def search_text_es(query: str, size: int = 5):
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            return hits if hits else [{"error": "❌ 검색 결과가 없습니다."}]
+            # 검색 결과가 없을 경우 `_score: 1e-6` 추가
+            return hits if hits else [{
+                "_index": f"{index_name}",
+                "_id": "-1",
+                "_score": 1e-6,
+                "_source": {
+                    "page_content": "검색된 공지가 없습니다.",
+                    "metadata": {
+                        "doc_name": "no_result",
+                        "date": "0000-00"
+                    }
+                }
+            }]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
 
     except Exception as e:
         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
-
-
 
 
 def search_image_es(query: str, size: int = 5, return_field: str = "image_summary"):
@@ -186,7 +203,7 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
                         }
                     }
                 ],
-                "filter": filter_conditions if filter_conditions else [] 
+                "filter": filter_conditions if filter_conditions else []
             }
         }
     }
@@ -204,13 +221,28 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
             result = response.json()
             hits = result.get("hits", {}).get("hits", [])
 
-            return hits
+            # 검색 결과가 없을 경우 `_score: 1e-6` 추가
+            return hits if hits else [{
+                "_index": f"{index_name}",
+                "_id": "-1",
+                "_score": 1e-6,
+                "_source": {
+                    "image_summary": "검색된 공지가 없습니다.",
+                    "img_base64": "공지가 없어요",
+                    "metadata": {
+                        "doc_name": "no_result",
+                        "date": "0000-00"
+                    }
+                }
+            }]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
 
     except Exception as e:
         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+
+
 # elastic 클라우드에서 원하는 doc id의 base64 가져오기기
 def search_base64(query: str, size: int = 1):
     """
@@ -219,7 +251,7 @@ def search_base64(query: str, size: int = 1):
     index_name = "image_data"
     es_client = get_es_client()
 
-    # ✅ `ids` 쿼리로 수정 (match 대신 사용)
+    # `ids` 쿼리로 수정 (match 대신 사용)
     es_query = {
         "query": {
             "ids": {
@@ -243,27 +275,32 @@ def search_base64(query: str, size: int = 1):
 
             # `img_base64` 필드만 추출하여 반환
             base64_results = [
-                hit["_source"]["img_base64"]
+                hit["_source"].get("img_base64", "")
                 for hit in hits
                 if "_source" in hit and "img_base64" in hit["_source"]
             ]
 
-            return base64_results if base64_results else [{"error": "🔍 검색 결과 없음"}]
+            return base64_results if base64_results else [None]
 
         else:
             return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
 
     except Exception as e:
-        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
-
-#===========================================================================================================
+        return [{"error": f"❌ base64 검색 중 오류 발생: {str(e)}"}]
 
 
-#text 공지 임베딩 후 milvus에 업로드
-os.environ["OPENAI_API_KEY"] = "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"
-OPENAI_API_KEY = os.getenv("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")
-embedding_dim=1536
+# ===========================================================================================================
+
+
+# text 공지 임베딩 후 milvus에 업로드
+os.environ[
+    "OPENAI_API_KEY"] = "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"
+OPENAI_API_KEY = os.getenv(
+    "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")
+embedding_dim = 1536
 openai_client = OpenAI()
+
+
 def emb_text(text):
     return (
         openai_client.embeddings.create(input=text, model="text-embedding-3-small")
@@ -271,7 +308,9 @@ def emb_text(text):
         .embedding
     )
 
-milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com", token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
+
+milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com",
+                                             token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
 
 
 def milvus_text_search(user_query):
@@ -279,19 +318,18 @@ def milvus_text_search(user_query):
     collection_name = "txt_collection"
     try:
         search_res = milvus_client.search(
-        collection_name=collection_name,
-        data=[
-            emb_text(question)
-        ],
-        limit=10,
-        search_params={"metric_type": "IP", "params": {}},  # Inner product distance
-        output_fields=["text"],
+            collection_name=collection_name,
+            data=[
+                emb_text(question)
+            ],
+            limit=10,
+            search_params={"metric_type": "IP", "params": {}},  # Inner product distance
+            output_fields=["text"],
         )
         dense_results = [
-        {"id": result["id"], "text": result["entity"].get("text"), "distance": result["distance"]}
-        for result in search_res[0]
+            {"id": result["id"], "text": result["entity"].get("text"), "distance": result["distance"]}
+            for result in search_res[0]
         ]
-
 
         if not dense_results:
             return print("\n❌ [DEBUG] 검색 결과 없음")
@@ -299,24 +337,25 @@ def milvus_text_search(user_query):
         else:
             return dense_results
     except Exception as e:
-        return print(f"\n❌ [DEBUG] 검색 중 오류 발생: {e}")  
-    
+        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")
+
+
 def milvus_image_search(user_query):
     question = user_query
     collection_name = "img_collection"
     try:
         search_res = milvus_client.search(
-        collection_name=collection_name,
-        data=[
-            emb_text(question)
-        ],
-        limit=10,
-        search_params={"metric_type": "IP", "params": {}},  # Inner product distance
-        output_fields=["img_summary"],
+            collection_name=collection_name,
+            data=[
+                emb_text(question)
+            ],
+            limit=10,
+            search_params={"metric_type": "IP", "params": {}},  # Inner product distance
+            output_fields=["img_summary"],
         )
         dense_results = [
-        {"id": result["id"], "img_summary": result["entity"].get("img_summary"), "distance": result["distance"]}
-        for result in search_res[0]
+            {"id": result["id"], "img_summary": result["entity"].get("img_summary"), "distance": result["distance"]}
+            for result in search_res[0]
         ]
 
         if not dense_results:
@@ -325,5 +364,4 @@ def milvus_image_search(user_query):
         else:
             return dense_results
     except Exception as e:
-        return print(f"\n❌ [DEBUG] 검색 중 오류 발생: {e}")  
-    
+        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")

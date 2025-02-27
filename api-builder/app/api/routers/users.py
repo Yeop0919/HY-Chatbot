@@ -2,12 +2,11 @@
 users API는 간단한 예시로 실제 개발시 items API를 참고하길 바람
 """
 
-from fastapi import APIRouter
-from fastapi.responses import JSONResponse
-
 from app.schemas.response import APIResponseModel
 from app.schemas.users import UserModel, UsersResponseModel
 from app.src.users.users import fake_users_db
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 router = APIRouter()  # APIRouter 변수명은 원하는대로 설정 가능
 

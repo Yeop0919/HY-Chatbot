@@ -1,10 +1,9 @@
 from typing import Dict
 
-from starlette import status
-
 from app.config import settings
 from app.exceptions.base import ApplicationError
 from app.exceptions.service import ItemNotFoundError
+from starlette import status
 
 
 def load_mock_items() -> Dict[str, Dict[str, str]]:

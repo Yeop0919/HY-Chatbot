@@ -2,9 +2,8 @@ import logging
 import sys
 from pathlib import Path
 
-from loguru import logger
-
 from app.config import settings
+from loguru import logger
 
 
 class InterceptHandler(logging.Handler):

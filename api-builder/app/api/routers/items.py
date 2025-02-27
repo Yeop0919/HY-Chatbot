@@ -5,13 +5,12 @@ PUT, POST, GET 에 대한 다양한 API 예시를 작성해놨으니 참고해�
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Body
-from fastapi.responses import JSONResponse
-
 from app.api.examples.items import create_item_examples, update_item_examples, get_item_examples
 from app.dependencies import get_token_header
 from app.schemas.items import CreateItemsRequestModel, Items, CreateItemResponse, ItemResponseModel
 from app.src.items.items import load_mock_items, read_item_from_db, update_item_to_db
+from fastapi import APIRouter, Depends, Path, Body
+from fastapi.responses import JSONResponse
 
 router = APIRouter(
     prefix="/items",
