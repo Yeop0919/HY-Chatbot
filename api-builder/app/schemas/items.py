@@ -7,11 +7,10 @@ pydantic BaseModel을 기본적으로 활용한다.
     - @model_validator(...)를 사용하여 모델 적용 전과 후에 확인할 로직을 작성한다.
     > 자세한 사항은 pydantic 공식 문서 확인
 """
-from pydantic import BaseModel, Field, field_validator
-
 from app.exceptions.service import InvalidItemStock
 from app.schemas.response import APIResponseModel
 from app.version import VERSION
+from pydantic import BaseModel, Field, field_validator
 
 
 class CreateItemsRequestModel(BaseModel):

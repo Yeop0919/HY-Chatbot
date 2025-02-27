@@ -1,14 +1,13 @@
 import logging
 
+from app.config import settings
+from app.exceptions.base import ApplicationError
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
 from starlette import status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-
-from app.config import settings
-from app.exceptions.base import ApplicationError
 
 
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):

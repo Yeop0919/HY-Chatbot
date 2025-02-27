@@ -1,7 +1,6 @@
-from fastapi.testclient import TestClient
-
 from app.config import settings
 from app.main import app
+from fastapi.testclient import TestClient
 from tests.check_common_conditions import check_success_common_conditions
 
 client = TestClient(app)

@@ -1,10 +1,9 @@
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 from app.config import settings
 from app.log import Log
 from app.version import VERSION
+from pydantic import BaseModel, Field
 
 
 class APIResponseModel(BaseModel):

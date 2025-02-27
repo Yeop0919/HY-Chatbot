@@ -9,7 +9,7 @@ resource_rules:
         actions:
           comment: |
             {{author}} 이슈에 한 명 이상의 Assignee를 지정해 주세요.
-            
+
       - name: find all open, no label issues -> comment issues
         conditions:
           state: opened
@@ -33,7 +33,7 @@ resource_rules:
             생성일: {{created_at}}, 마지막 수정일: {{updated_at}}, closed: {{closed_at}}
             
             이슈를 다시 확인하세요. {{author}}
-            
+
           status:
             - close
 
@@ -47,7 +47,7 @@ resource_rules:
         actions:
           comment: |
             {{author}} MR에 한 명 이상의 Assignee를 지정해 주세요.
-            
+
       - name: find all open, no label MR -> comment MR
         conditions:
           state: opened

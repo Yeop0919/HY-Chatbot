@@ -1,6 +1,6 @@
 import logging
-import re
 import os
+import re
 from typing import Literal, List, Annotated, Any, Union, Dict
 
 from pydantic import AnyUrl, BeforeValidator, computed_field, field_validator
@@ -87,18 +87,20 @@ class Settings(BaseSettings):
             return True
 
     # Backend
-    BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = ["http://localhost:8001", "http://localhost:3000", "http://localhost:8000", "http://localhost:27500"]
+    BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = ["http://localhost:8001", "http://localhost:3000",
+                                                                                              "http://localhost:8000", "http://localhost:27500"]
 
     # Service Config
     X_TOKEN: str = "wisenut"
-    
-    ELASTIC_CLOUD_URL: str = os.getenv("ELASTIC_CLOUD_URL", "https://e398b41cb31146b5adaa38c2c530b10f.us-central1.gcp.cloud.es.io:443")
-    ELASTIC_API_KEY: str = os.getenv("ELASTIC_API_KEY", "b2NlM0NKVUJzb3VEVGw3SEV4WUs6RzRjeUlYeEpTM20yY28tbFZCc0ZNQQ==")
+
+    ELASTIC_CLOUD_URL: str = os.getenv("ELASTIC_CLOUD_URL", "https://18f9b789ff1643689ec7b7ae2d04f204.us-central1.gcp.cloud.es.io:443")
+    ELASTIC_API_KEY: str = os.getenv("ELASTIC_API_KEY", "NEJ6bkhwVUJ5UU52ZzM4M3M0Vjc6Znd3bnlSUHFScTZvU2xadk1yaEg3Zw==")
     PORT: int = int(os.getenv("PORT", 8000))
-    
-    ELASTIC_CLOUD_ID: str = os.getenv("ELASTIC_CLOUD_ID","64fb5a48137c4e20bf19c9ce2d24b372:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJGUzOThiNDFjYjMxMTQ2YjVhZGFhMzhjMmM1MzBiMTBmJDBhZDNjZDEwMjgyMzQ5ZGVhNmU4NmY5YTNhYjFjM2M564fb5a48137c4e20bf19c9ce2d24b372:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJGUzOThiNDFjYjMxMTQ2YjVhZGFhMzhjMmM1MzBiMTBmJDBhZDNjZDEwMjgyMzQ5ZGVhNmU4NmY5YTNhYjFjM2M5")
-    ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME","new_admin")
-    ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "NewSecurePassword123!")
+
+    ELASTIC_CLOUD_ID: str = os.getenv("ELASTIC_CLOUD_ID",
+                                      "My_deployment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJDE4ZjliNzg5ZmYxNjQzNjg5ZWM3YjdhZTJkMDRmMjA0JDI5NjNlODg0NTMzMzQyNmJhYWExMmE0YmYyODdmNWZm")
+    ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME", "elastic")
+    ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "dpe6rbckQl59QctEE39K0sB8")
 
 
 settings = Settings()  # type: ignore

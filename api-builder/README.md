@@ -9,7 +9,8 @@
 [![Pipeline Status](https://gitlab.com/wisenut-research/lab/starter/python-fastapi-template/badges/main/pipeline.svg)](https://gitlab.com/wisenut-research/lab/starter/python-fastapi-template/commits/main)
 
 > **빠르고 쉽게 파이썬 기반의 HTTP API 웹 서버를 개발하기 위한 템플릿**  
-> (API 명세는 와이즈넛 [Restful API 디자인 가이드](https://docs.google.com/document/d/1tSniwfrVaTIaTT4MxhBRAmv-S_ECcoSFAXlYrsg4K0Y/edit#heading=h.60fu2rc04bck)를 따른다)
+> (API 명세는 와이즈넛 [Restful API 디자인 가이드](https://docs.google.com/document/d/1tSniwfrVaTIaTT4MxhBRAmv-S_ECcoSFAXlYrsg4K0Y/edit#heading=h.60fu2rc04bck)를
+> 따른다)
 
 <hr>
 
@@ -30,7 +31,8 @@ Python FastAPI Template 은 아래와 같은 특징을 갖고 있다.
     - (Non-Cloud environment) 분산 처리를 위한 Gunicorn 프리셋 구성을 위한 `gunicorn.Dockerfile`
     - 로컬에서 빠른 개발 환경 구동을 위한 `dev.Dockerfile`
 7. **Gunicorn**: multi process 환경 구성
-8. **파이썬 앱 개발부터 배포까지 필요한 GitOps와 문서 템플릿 제공**: secret detection, lint test(ruff, pyright, hadolint), unit test(pytest, SAST), deploy, container scanning, triage, mkdocs
+8. **파이썬 앱 개발부터 배포까지 필요한 GitOps와 문서 템플릿 제공**: secret detection, lint test(ruff, pyright, hadolint), unit test(pytest, SAST), deploy, container
+   scanning, triage, mkdocs
 
 ### Requirements
 
@@ -42,17 +44,18 @@ Python FastAPI Template 은 아래와 같은 특징을 갖고 있다.
 
 ![quick start guide gif](docs/docs/images/quick-start-guide.gif "quick start guide gif")
 
-
 ### 1. Install Requirements
 
 > [uv 공식문서](https://docs.astral.sh/uv/getting-started/installation/#installing-uv) 참고
 
 ### macOS and Linux
+
 ```bash
 $ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### Windows
+
 ```powershell
 $ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
@@ -64,10 +67,11 @@ $ uv sync
 ```
 
 ### pyCharm Interpreter 설정
-- pyCharm이 .venv 를 인식하도록 새로 생성하고, uv 로 .venv 에 의존성 설치하는 방법
-- [pyCharm이 uv 환경 지원을 릴리즈하면 수정할 예정](https://youtrack.jetbrains.com/issue/PY-70533/Support-package-management-via-uv) 
 
-1. `/.venv/` 존재할 경우 삭제 
+- pyCharm이 .venv 를 인식하도록 새로 생성하고, uv 로 .venv 에 의존성 설치하는 방법
+- [pyCharm이 uv 환경 지원을 릴리즈하면 수정할 예정](https://youtrack.jetbrains.com/issue/PY-70533/Support-package-management-via-uv)
+
+1. `/.venv/` 존재할 경우 삭제
 2. [Settings] - [Project:<<YOUR_PROJECT_NAME>>] - [Python Interpreter] - [Add Interpreter]
 3. Interpreter 위치 선택(default: Local Interpreter)
 4. Generate New, Virtualenv 선택 후 생성
@@ -100,5 +104,6 @@ $ docker run -d --rm --name python-fastapi-template -p 8000:8000 -e X_TOKEN=wise
 
 ## Project Description
 
-> 프로젝트 생성, 환경 세팅, 실행방법, 앱 구조, GitLab CI/CD 파이프라인, Gunicorn 및 내부망 환경에 대해 더 자세히 알고싶으면 [Python FastAPI 문서](https://labs.wisenut.kr/clusters/local/namespaces/mkdocs/services/pft-mkdocs/public/latest/)를 확인하세요.
+> 프로젝트 생성, 환경 세팅, 실행방법, 앱 구조, GitLab CI/CD 파이프라인, Gunicorn 및 내부망 환경에 대해 더 자세히
+> 알고싶으면 [Python FastAPI 문서](https://labs.wisenut.kr/clusters/local/namespaces/mkdocs/services/pft-mkdocs/public/latest/)를 확인하세요.
 >
