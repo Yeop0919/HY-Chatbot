@@ -1,60 +1,52 @@
-import os
-import re
-from datetime import datetime, timedelta
-
-import requests
-from app.config import settings
 from elasticsearch import Elasticsearch
-from konlpy.tag import Okt, Komoran
-from openai import OpenAI
+import re
+import os
+import json
+from datetime import datetime, timedelta
+from konlpy.tag import Okt,Komoran
+from app.config import settings
+import requests
 from pymilvus import MilvusClient
+from openai import OpenAI
+from typing import List
 
+def get_es_client():
+    """
+    Elasticsearch 로컬 클라이언트 생성
+    """
+    return Elasticsearch("http://localhost:8001")
 
-### Elasticsearch 연결 체크
 def check_elasticsearch_connection():
-    """Elasticsearch 연결 상태 확인 (_cluster/health 호출)"""
-    auth = (settings.ELASTIC_USERNAME, settings.ELASTIC_PASSWORD)  # ID/PW 인증
-
+    """
+    Elasticsearch 연결 상태 확인
+    """
+    es = get_es_client()
     try:
-        response = requests.get(
-            f"{settings.ELASTIC_CLOUD_URL}/_cluster/health",  # 클러스터 상태 확인 API
-            auth=auth,  # ID/PW 인증 추가
-            timeout=10
-        )
-
-        if response.status_code == 200:
-            data = response.json()
-            print(f"✅ Elasticsearch 연결 성공! 상태: {data['status']}")
-            return {"status": "connected", "cluster_status": data["status"], "message": "Elasticsearch 연결 성공!"}
-        else:
-            print(f"❌ Elasticsearch 연결 실패: {response.status_code} - {response.text}")
-            return {"status": "failed", "error": f"연결 실패: {response.status_code} - {response.text}"}
-
+        health = es.cluster.health()
+        print(f"✅ Elasticsearch 연결 성공! 상태: {health['status']}")
+        return {"status": "connected", "cluster_status": health["status"], "message": "Elasticsearch 연결 성공!"}
     except Exception as e:
         print(f"❌ Elasticsearch 요청 오류: {str(e)}")
         return {"status": "error", "error": f"Elasticsearch 요청 오류: {str(e)}"}
-
-
-check_elasticsearch_connection()
+    finally:
+        es.close()
 
 komoran = Komoran()
-
 
 def extract_keywords(query: str):
     """
     한국어 문장에서 주요 키워드 추출 (명사, 동사, 형용사)
     """
-    stopwords = {'것', '하다', '되다', '있다', '없다', '이다', '그', '수', '이', '저'}  # 불필요한 단어 목록
+    stopwords = {'것', '하다', '되다', '있다', '없다', '이다', '그', '수', '이', '저'}
     keywords = []
-
+    
     for word, pos in komoran.pos(query):
-        if pos in ["NNG", "NNP", "VV", "VA"]:  # 일반 명사, 고유 명사, 동사, 형용사
+        if pos in ["NNG", "NNP", "VV", "VA"]:
             word = word.strip()
-            if word not in stopwords:  # 불필요한 단어 제거
+            if word not in stopwords:
                 keywords.append(word)
-
+    
     return keywords
-
 
 ### 날짜 추출 함수 (텍스트)
 def extract_date_from_query(query: str):
@@ -76,11 +68,9 @@ def extract_date_from_query(query: str):
 
     return None, None
 
-
-### 날짜 추출 함수 (이미지)
-def img_extract_date_from_query(query: str):
+def extract_date_with_day_from_query(query: str):
     """
-    자연어 쿼리에서 날짜(YYYY-MM-DD 또는 YYYY-MM 또는 YYYY년 형태)를 추출하는 함수
+    자연어 쿼리에서 날짜(YYYY-MM-DD 또는 YYYY-MM)를 추출
     """
     now = datetime.now()
     current_year = str(now.year)
@@ -101,90 +91,40 @@ def img_extract_date_from_query(query: str):
 
     return None, None
 
+def text_index_sort(year_list: list):
+    """
+    색인 정리
+    """
+    index_list = []
+    if "2022-2024" in year_list:
+        index_list.append("text_data")
+    if "2025" in year_list:
+        index_list.append("text_data_2025")
+    return ",".join(index_list)
 
-### Elasticsearch 클라이언트 생성
-def get_es_client():
-    """ 새로운 Elasticsearch 클라이언트 생성 (API Key 인증) """
-    headers = {
-        "Authorization": f"ApiKey {settings.ELASTIC_API_KEY}",
-        "X-Token": settings.X_TOKEN
-    }
-
-    return {
-        "url": f"{settings.ELASTIC_CLOUD_URL}",
-        "headers": headers
-    }
+def image_index_sort(year_list: list):
+    """
+    색인 정리
+    """
+    index_list = []
+    if "2022-2024" in year_list:
+        index_list.append("image_data")
+    if "2025" in year_list:
+        index_list.append("image_data_2025")
+    return ",".join(index_list)
 
 
-def search_text_es(query: str, size: int = 5):
-    """ Elasticsearch에서 본문만 검색하고 BM25 점수만 반환 """
-    index_name = "text_data"
-    es_client = get_es_client()
+def search_text_es(query: str, year_list: list, size: int = 10):
+    """
+    로컬 Elasticsearch에서 본문 검색 (BM25 점수만 반환)
+    """
+    es = get_es_client()
+    index_name = text_index_sort(year_list)
     keywords = extract_keywords(query)
-    start_date, end_date = extract_date_from_query(query)
-
-    # 필터 조건 (날짜 범위 필터 적용)
-    filter_conditions = []
-    if start_date and end_date:
-        filter_conditions.append({"range": {"metadata.date": {"gte": start_date, "lte": end_date}}})
-
-    es_query = {
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "match": {
-                            "page_content": {
-                                "query": " ".join(keywords),
-                                "operator": "or"
-                            }
-                        }
-                    }
-                ],
-                "filter": filter_conditions if filter_conditions else []
-            }
-        }
-    }
-
-    try:
-        response = requests.get(
-            f"{es_client['url']}/{index_name}/_search",
-            headers=es_client["headers"],
-            json=es_query,
-            params={"size": size},
-            timeout=30
-        )
-
-        if response.status_code == 200:
-            result = response.json()
-            hits = result.get("hits", {}).get("hits", [])
-
-            # 검색 결과가 없을 경우 `_score: 1e-6` 추가
-            return hits if hits else [{
-                "_index": f"{index_name}",
-                "_id": "-1",
-                "_score": 1e-6,
-                "_source": {
-                    "page_content": "검색된 공지가 없습니다.",
-                    "metadata": {
-                        "doc_name": "no_result",
-                        "date": "0000-00"
-                    }
-                }
-            }]
-
-        else:
-            return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
-
-    except Exception as e:
-        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
-
-
-def search_image_es(query: str, size: int = 5, return_field: str = "image_summary"):
-    index_name = "image_data"
-    es_client = get_es_client()
-    keywords = extract_keywords(query)
-    start_date, end_date = img_extract_date_from_query(query)
+    if index_name == "text_data":
+        start_date, end_date = extract_date_from_query(query)
+    elif index_name == "text_data_2025":
+        start_date, end_date = extract_date_with_day_from_query(query)
 
     filter_conditions = []
     if start_date and end_date:
@@ -194,113 +134,228 @@ def search_image_es(query: str, size: int = 5, return_field: str = "image_summar
         "query": {
             "bool": {
                 "must": [
-                    {
-                        "match": {
-                            "image_summary": {
-                                "query": " ".join(keywords),
-                                "operator": "or"
-                            }
-                        }
-                    }
+                    {"match": {"page_content": {"query": " ".join(keywords), "operator": "or"}}}
                 ],
-                "filter": filter_conditions if filter_conditions else []
+                "filter": filter_conditions
             }
         }
     }
 
     try:
-        response = requests.get(
-            f"{es_client['url']}/{index_name}/_search",
-            headers=es_client["headers"],
-            json=es_query,
-            params={"size": size},
-            timeout=30
-        )
+        response = es.search(index=index_name, body=es_query, size=size)
+        hits = response.get("hits", {}).get("hits", [])
 
-        if response.status_code == 200:
-            result = response.json()
-            hits = result.get("hits", {}).get("hits", [])
-
-            # 검색 결과가 없을 경우 `_score: 1e-6` 추가
-            return hits if hits else [{
-                "_index": f"{index_name}",
-                "_id": "-1",
-                "_score": 1e-6,
-                "_source": {
-                    "image_summary": "검색된 공지가 없습니다.",
-                    "img_base64": "공지가 없어요",
-                    "metadata": {
-                        "doc_name": "no_result",
-                        "date": "0000-00"
-                    }
+        return hits if hits else [{
+            "_index": f"{index_name}",
+            "_id": "-1",
+            "_score": 1e-6,
+            "_source": {
+                "page_content": "검색된 공지가 없습니다.",
+                "metadata": {
+                    "doc_name": "no_result",
+                    "date": "0000-00",
+                    "bundle": "not in bundle"
                 }
-            }]
+            }
+        }]
+    finally:
+        es.close()
 
-        else:
-            return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
+### 보고서로 쓸 예정이니 지우지 말 것 ###
+###############################################################################################################
+# def search_image_es(query: str, year_list: list, size: int = 10):
+#     """
+#     로컬 Elasticsearch에서 이미지 검색, 보고서로 쓸 예정이니 지우지 말 것
+#     """
+#     es = get_es_client()
+#     index_name = image_index_sort(year_list)
+#     keywords = extract_keywords(query)
+#     start_date, end_date = extract_date_with_day_from_query(query)
 
-    except Exception as e:
-        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+#     filter_conditions = []
+#     if start_date and end_date:
+#         filter_conditions.append({"range": {"metadata.date": {"gte": start_date, "lte": end_date}}})
+
+#     es_query = {
+#         "query": {
+#             "bool": {
+#                 "must": [
+#                     {"match": {"image_summary": {"query": " ".join(keywords), "operator": "or"}}}
+#                 ],
+#                 "filter": filter_conditions
+#             }
+#         }
+#     }
+
+#     try:
+#         response = es.search(index=index_name, body=es_query, size=size)
+#         hits = response.get("hits", {}).get("hits", [])
+
+#         return hits if hits else [{
+#             "_index": f"{index_name}",
+#             "_id": "-1",
+#             "_score": 1e-6,
+#             "_source": {
+#                 "image_summary": "검색된 공지가 없습니다.",
+#                 "img_base64": "공지가 없어요",
+#                 "metadata": {
+#                     "doc_name": "no_result",
+#                     "date": "0000-00",
+#                     "bundle": "not in bundle"
+#                 }
+#             }
+#         }]
+#     finally:
+#         es.close()
+###############################################################################################################
+
+def search_image_es(query: str, year_list: list, size: int = 10):
+    """
+    로컬 Elasticsearch에서 이미지 검색 (Base64 제외)
+    """
+    es = get_es_client()
+    index_name = image_index_sort(year_list)
+    keywords = extract_keywords(query)
+    start_date, end_date = extract_date_with_day_from_query(query)
+
+    filter_conditions = []
+    if start_date and end_date:
+        filter_conditions.append({"range": {"metadata.date": {"gte": start_date, "lte": end_date}}})
+
+    es_query = {
+        "_source": {
+            "excludes": ["img_base64"]  # 🔥 Base64 필드 제외
+        },
+        "query": {
+            "bool": {
+                "must": [
+                    {"match": {"image_summary": {"query": " ".join(keywords), "operator": "or"}}}
+                ],
+                "filter": filter_conditions
+            }
+        }
+    }
+
+    try:
+        response = es.search(index=index_name, body=es_query, size=size)
+        hits = response.get("hits", {}).get("hits", [])
+
+        return hits if hits else [{
+            "_index": f"{index_name}",
+            "_id": "-1",
+            "_score": 1e-6,
+            "_source": {
+                "image_summary": "검색된 공지가 없습니다.",
+                "metadata": {
+                    "doc_name": "no_result",
+                    "date": "0000-00",
+                    "bundle": "not in bundle"
+                }
+            }
+        }]
+    finally:
+        es.close()
 
 
-# elastic 클라우드에서 원하는 doc id의 base64 가져오기기
+
 def search_base64(query: str, size: int = 1):
     """
-    Elasticsearch에서 이미지의 Base64 데이터만 검색하고 반환 (ID 기반)
+    Elasticsearch에서 이미지의 Base64 데이터 검색 (ID 기반)
     """
+    es = get_es_client()
     index_name = "image_data"
-    es_client = get_es_client()
 
-    # `ids` 쿼리로 수정 (match 대신 사용)
     es_query = {
         "query": {
             "ids": {
-                "values": [query] if isinstance(query, str) else query  # 단일 ID 또는 리스트 지원
+                "values": [query] if isinstance(query, str) else query
             }
         }
     }
 
     try:
-        response = requests.get(
-            f"{es_client['url']}/{index_name}/_search",
-            headers=es_client["headers"],
-            json=es_query,
-            params={"size": size},
-            timeout=30
-        )
+        response = es.search(index=index_name, body=es_query, size=size)
+        hits = response.get("hits", {}).get("hits", [])
 
-        if response.status_code == 200:
-            result = response.json()
-            hits = result.get("hits", {}).get("hits", [])
+        return [hit["_source"].get("img_base64", "") for hit in hits if "_source" in hit] or [None]
+    finally:
+        es.close()
 
-            # `img_base64` 필드만 추출하여 반환
-            base64_results = [
-                hit["_source"].get("img_base64", "")
-                for hit in hits
-                if "_source" in hit and "img_base64" in hit["_source"]
-            ]
+# def search_base64_by_bundle(bundle, size: int = 15):
+#     """
+#     로컬 Elasticsearch에서 bundle을 이용해 같은 공지의 이미지를 검색
+#     """
+#     index_name = "image_data_2025"
 
-            return base64_results if base64_results else [None]
+#     # 로컬 Elasticsearch 클라이언트 연결
+#     es = get_es_client() 
 
-        else:
-            return [{"error": f"❌ 검색 실패: {response.status_code} - {response.text}"}]
+#     es_query = {
+#         "query": {
+#             "term": {
+#                 "metadata.bundle": bundle  # 정확한 UUID 일치 검색
+#             }
+#         }
+#     }
+
+#     try:
+#         response = es.search(index=index_name, body=es_query, size=size)
+
+#         hits = response.get("hits", {}).get("hits", [])
+
+#         # `img_base64` 필드만 추출하여 반환
+#         base64_results = [
+#             hit["_source"]["img_base64"]
+#             for hit in hits
+#             if "_source" in hit and "img_base64" in hit["_source"]
+#         ]
+
+#         return base64_results if base64_results else [None]
+
+#     except Exception as e:
+#         return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+
+#     finally:
+#         es.close()
+
+def search_base64_by_bundle(bundle, size: int = 15):
+    """
+    로컬 Elasticsearch에서 같은 bundle을 가진 이미지 묶음을 검색
+    """
+    index_name = "image_data_2025"
+
+    es = get_es_client()
+
+    es_query = {
+        "_source": ["img_base64"],
+        "query": {
+            "term": {
+                "metadata.bundle": bundle 
+            }
+        },
+        "size": size  
+    }
+
+    try:
+        response = es.search(index=index_name, body=es_query)
+        base64_results = [hit["_source"]["img_base64"] for hit in response.get("hits", {}).get("hits", [])]
+        return base64_results if base64_results else [{"error": "❌ 검색된 데이터가 없습니다."}]
 
     except Exception as e:
-        return [{"error": f"❌ base64 검색 중 오류 발생: {str(e)}"}]
+        return [{"error": f"❌ 검색 중 오류 발생: {str(e)}"}]
+
+    finally:
+        es.close()
 
 
-# ===========================================================================================================
+#===========================================================================================================
 
 
-# text 공지 임베딩 후 milvus에 업로드
-os.environ[
-    "OPENAI_API_KEY"] = "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"
-OPENAI_API_KEY = os.getenv(
-    "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")
-embedding_dim = 1536
+#text 공지 임베딩 후 milvus에 업로드
+os.environ["OPENAI_API_KEY"] = "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"
+OPENAI_API_KEY = os.getenv("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")
+embedding_dim=1536
 openai_client = OpenAI()
-
-
 def emb_text(text):
     return (
         openai_client.embeddings.create(input=text, model="text-embedding-3-small")
@@ -308,27 +363,68 @@ def emb_text(text):
         .embedding
     )
 
-
-milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com",
-                                             token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
+milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com", token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
 
 
-def milvus_text_search(user_query):
+def milvus_text_search(user_query,year):
     question = user_query
-    collection_name = "txt_collection"
+    if year=='2022-2024':
+        collection_name = "txt_collection"
+    elif year == '2025':
+        collection_name="text_2025_collection"
     try:
         search_res = milvus_client.search(
-            collection_name=collection_name,
-            data=[
-                emb_text(question)
-            ],
-            limit=10,
-            search_params={"metric_type": "IP", "params": {}},  # Inner product distance
-            output_fields=["text"],
+        collection_name=collection_name,
+        data=[
+            emb_text(question)
+        ],
+        limit=10,
+        #limit=5,
+        search_params={"metric_type": "IP", "params": {}},  # Inner product distance
+        output_fields=["text","metadata"],
         )
         dense_results = [
-            {"id": result["id"], "text": result["entity"].get("text"), "distance": result["distance"]}
-            for result in search_res[0]
+        {"id": result["id"], 
+         "text": result["entity"].get("text"), 
+         "distance": result["distance"], 
+         "date": result["entity"].get("metadata",{}).get("date", "날짜 없음"), 
+         'bundle':result["entity"].get("metadat",{}).get("bundle","bundle 없음")}
+        for result in search_res[0]
+        ]
+
+
+        if not dense_results:
+            return print("\n❌ [DEBUG] 검색 결과 없음")
+
+        else:
+            return dense_results
+    except Exception as e:
+        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")  
+    
+def milvus_image_search(user_query,year):
+    question = user_query
+    if year=='2022-2024':
+        collection_name = "img_collection"
+    elif year == '2025':
+        collection_name="image_2025_collection"
+    try:
+        search_res = milvus_client.search(
+        collection_name=collection_name,
+        data=[
+            emb_text(question)
+        ],
+        limit=10,
+        #limit=5,
+        search_params={"metric_type": "IP", "params": {}},  # Inner product distance
+        output_fields=["img_summary",'metadata'],
+        )
+        dense_results = [
+        {"id": result["id"], 
+         "img_summary": result["entity"].get("img_summary"),
+         "distance": result["distance"],
+         "date":result["entity"].get("metadata",{}).get("date","날짜 없음"),
+         "bundle":result["entity"].get("metadata",{}).get("bundle","bundle 없음")}
+        for result in search_res[0]
         ]
 
         if not dense_results:
@@ -337,31 +433,5 @@ def milvus_text_search(user_query):
         else:
             return dense_results
     except Exception as e:
-        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")
-
-
-def milvus_image_search(user_query):
-    question = user_query
-    collection_name = "img_collection"
-    try:
-        search_res = milvus_client.search(
-            collection_name=collection_name,
-            data=[
-                emb_text(question)
-            ],
-            limit=10,
-            search_params={"metric_type": "IP", "params": {}},  # Inner product distance
-            output_fields=["img_summary"],
-        )
-        dense_results = [
-            {"id": result["id"], "img_summary": result["entity"].get("img_summary"), "distance": result["distance"]}
-            for result in search_res[0]
-        ]
-
-        if not dense_results:
-            return print("\n❌ [DEBUG] 검색 결과 없음")
-
-        else:
-            return dense_results
-    except Exception as e:
-        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")
+        return print(f"\n❌ [DEBUG] milvus 검색 중 오류 발생: {e}")  
+    
