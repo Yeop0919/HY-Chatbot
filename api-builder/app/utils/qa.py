@@ -1,11 +1,10 @@
+
+from app.utils.ela import search_base64, search_base64_by_bundle
 import os
 
-from app.utils.ela import search_base64
+os.environ["OPENAI_API_KEY"] = "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"
+OPENAI_API_KEY = os.getenv("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")
 
-os.environ[
-    "OPENAI_API_KEY"] = "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"
-OPENAI_API_KEY = os.getenv(
-    "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")
 
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.messages import HumanMessage
@@ -14,8 +13,6 @@ from PIL import Image
 from langchain_openai import ChatOpenAI
 import base64
 import io
-
-
 def resize_base64_image(base64_string, size=(700, 700)):
     """
     Resize an image encoded as a Base64 string
@@ -34,28 +31,40 @@ def resize_base64_image(base64_string, size=(700, 700)):
     # Encode the resized image to Base64
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-
 def make_data_dict(user_query, text_reranked_result, image_reranked_result):
-    txt_context = [result["text"] for result in text_reranked_result]
-    img_context_ids = [str(result["id"]) for result in image_reranked_result[:2]]
-    img_context = []
-    for id in img_context_ids:
-        base64 = search_base64(id)
-        if base64:
-            img_context.append(base64[0])
-        else:
-            raise Exception("이것은 기본적인 예외 발생 예제입니다.")
+    txt_context = [ result["text"] for result in text_reranked_result]
+    img_context_ids = [str(result["id"]) for result in image_reranked_result]
+    img_context_bundles=[]
+    for i in range(2):
+        result=image_reranked_result[i]
+        if not str(result["bundle"]) in img_context_bundles:
+            img_context_bundles.append(str(result["bundle"]))
+    img_context=[]
+    if not img_context_bundles[0] == 'bundle 없음':
+        for bundle in img_context_bundles:
+            base64=search_base64_by_bundle(bundle,size=12)
+            if base64:
+                for b in base64:
+                    img_context.append(b)
+            else:
+                raise Exception("이것은 bundle로 이미지 검색 문제입니다.")
+    else:
+        for id in img_context_ids:
+            base64=search_base64(id)
+            if base64:
+                img_context.append(base64[0])
+            else:
+                raise Exception("이것은 id로 이미지 검색 문제입니다.")
 
-    data_dict = {
-        "context": {
-            "texts": txt_context,
-            "images": img_context
+    data_dict={
+        "context":{
+            "texts":txt_context,
+            "images":img_context
 
         },
-        "question": user_query
+        "question":user_query
     }
     return data_dict
-
 
 def img_prompt_func(data_dict):
     """
@@ -89,6 +98,7 @@ def img_prompt_func(data_dict):
     return [HumanMessage(content=messages)]
 
 
+    
 def llm_answer(user_query, text_reranked_result, image_reranked_result):
     """
     Multi-modal RAG pipeline without RunnableLambda
@@ -118,5 +128,5 @@ def llm_answer(user_query, text_reranked_result, image_reranked_result):
 #     if hasattr(response, "content"):
 #         # Markdown을 HTML로 변환
 #         response.content = markdown.markdown(response.content, extensions=['fenced_code'])
-
+    
 #     return response

@@ -1,7 +1,5 @@
-from pathlib import Path
-
 import requests
-
+from pathlib import Path
 # FastAPI 서버의 URL
 url = "http://localhost:27500/rest/upload"
 
