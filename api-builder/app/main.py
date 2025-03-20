@@ -47,7 +47,6 @@ print(json.dumps(
      "HOME_PATH": os.getcwd(), "COMMAND": ' '.join(sys.argv),
      "Usage": "uvicorn app.main:app --host 0.0.0.0 --port <port number>"}, ensure_ascii=False))
 
-
 @asynccontextmanager
 async def lifespan(lifespan_app: FastAPI):
     # startup event
@@ -57,7 +56,6 @@ async def lifespan(lifespan_app: FastAPI):
     yield
     # shutdown event
     logging.info(f"Shut down {settings.SERVICE_NAME} Service")
-
 
 app = FastAPI(
     lifespan=lifespan,
@@ -70,6 +68,7 @@ app = FastAPI(
     root_path_in_servers=settings.root_path_in_servers,
     docs_url=None, redoc_url=None  # Serve the static files
 )
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.logger = setup_logging()  # type: ignore
 
@@ -110,12 +109,6 @@ async def get_request_id(request: Request):
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return {}
-
-# favicon
-@app.get("/favicon.ico", include_in_schema=False)
-async def favicon():
-    return {}
-
 
 @app.middleware("http")
 async def add_request_id(request: Request, call_next):

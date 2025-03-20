@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연도 선택</title>
+    <style>
+        body {
+    width: 100vw;
+    height: 100vh;
+    text-align: center;
+    background: #F8FAFC;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* 헤더 */
+/* 반응형 헤더 */
+.header {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* 너비: 화면 크기에 따라 조정 (최대 800px) */
+    width: min(56vw, 800px);
+    
+    /* 높이: 화면 크기에 따라 조정 (최소 80px) */
+    height: min(9vh, 80px);
+    
+    flex-shrink: 0;
+    border-bottom: 1px solid #CBD5E1;
+    background: #F8FAFC;
+    
+    display: flex;
+    align-items: center;
+    
+    /* 패딩도 반응형으로 조정 */
+    padding: 0 min(2vw, 20px);
+    
+    z-index: 1000;
+    pointer-events: none;
+}
+/* 컨테이너 */
+.container {
+    width: 90%;
+    max-width: 600px;
+    margin-top: 5vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+/* 뒤로 가기 버튼 (헤더 내부에 위치) */
+.back-btn {
+    position: absolute;
+    left: 1.5vw;
+    top: -50%;  /* 헤더의 가운데 정렬 */
+    transform: translateY(-50%); /* 수직 중앙 정렬 */  
+    /* 크기를 반응형으로 조정 */
+    width: min(4vw, 50px);  
+    height: min(3.3vw, 40px);  
+    flex-shrink: 0;
+    background: url('left-btn.png') no-repeat center center;
+    background-size: contain;
+    border: none;
+    cursor: pointer;
+    z-index: 1010;
+    pointer-events: auto; /* 버튼 클릭 가능 */
+}
+/* 연도 선택 문구 */
+.title {
+    color: #000;
+    font-family: Pretendard;
+    font-size: 1.8rem;  /* 반응형 조정 */
+    font-style: normal;
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: left;
+    margin-top: -7vh;
+    letter-spacing: -0.5px;
+    transform: translateX(-95px); /* 왼쪽으로 20px 이동 */
+}
+/* "연도"만 파란색 */
+.title .blue {
+    color: #2762A2;
+}
+/* 섹션 바 컨테이너 */
+.section-bars {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 2vh;
+}
+/* 각 섹션 바 */
+.section-bar {
+    width: 60%;
+    height: 1px;
+    background: #CBD5E1;
+    margin-top: 2vh;
+}
+/* 연도 선택 영역 */
+.year-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 60%;
+    padding: 2vh 0;
+    cursor: default;
+}
+/* 연도 텍스트 스타일 */
+.year-text {
+    color: #000;
+    font-family: Pretendard;
+    font-size: 1.2rem; /* 반응형 조정 */
+    font-style: normal;
+    font-weight: 600;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    margin-top: 2vh;
+    transform: translateX(10px);
+}
+/* 체크 아이콘 */
+.check-circle {
+    width: 2.5vw;
+    height: 2.5vw;
+    flex-shrink: 0;
+    cursor: default;
+    margin-top: 2vh;
+    transform: translateX(-10px);
+}
+/* 버튼 */
+button {
+    width: 60%;
+    height: 8vh;
+    border-radius: 40px;
+    background: #2762A2;
+    color: #FFF;
+    text-align: center;
+    font-family: Pretendard;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.5;
+    margin-top: 9vh;
+    border: none;
+    outline: none;
+}
+/* 버튼 (비활성화) */
+button:disabled {
+    background-color: #aaa;
+}
+    </style>
+</head>
+<body>
+    <header class="header">
+        <button class="back-btn" onclick="goBack();"></button>
+    </header>
+    <div class="container">
+        <h2 class="title">
+            원하는 <span class="blue">연도</span><span class="black">를</span><br>
+            선택해주세요
+        </h2>        
+        <!-- Section Bars와 연도 추가 -->
+        <div class="section-bars">
+            <div class="section-bar"></div>
+            <div class="year-container" onclick="selectYear('2022-2024')">
+                <span class="year-text">2022년~2024년</span>
+                <img id="check-2022-2024" class="check-circle" src="check-circle.png" alt="Check Icon">
+            </div>       
+            <div class="section-bar"></div>       
+            <div class="year-container" onclick="selectYear('2025')">
+                <span class="year-text">2025년</span>
+                <img id="check-2025" class="check-circle" src="check-circle.png" alt="Check Icon">
+            </div>        
+            <div class="section-bar"></div>
+        </div>        
+        <button id="confirmBtn" onclick="goToMain()" disabled>확인</button>        
+    </div>
+
+    <script>
+        let selectedYear = null;
+
+        function selectYear(year) {
+        const check2022 = document.getElementById("check-2022-2024");
+        const check2025 = document.getElementById("check-2025");
+
+        if (year === "2022-2024") {
+            check2022.src = "check-circle-filled.png"; // 선택됨
+            check2025.src = "check-circle.png"; // 해제됨
+        } else if (year === "2025") {
+            check2022.src = "check-circle.png"; // 해제됨
+            check2025.src = "check-circle-filled.png"; // 선택됨
+        }
+
+        // 선택된 연도 저장
+        localStorage.setItem("selectedYear", year);
+
+        // 확인 버튼 활성화
+        document.getElementById("confirmBtn").disabled = false;
+    }
+
+    function goToMain() {
+        if (localStorage.getItem("selectedYear")) {
+            window.location.href = "메인화면.html";
+        }
+    }
+
+    function goBack() {
+        localStorage.removeItem("selectedYear"); // 뒤로 가면 저장된 연도 삭제
+        window.location.href = "index.html";
+    }
+    </script>
+</body>
+</html>

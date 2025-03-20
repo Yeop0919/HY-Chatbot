@@ -48,8 +48,10 @@ def make_data_dict(user_query, text_reranked_result, image_reranked_result):
                     img_context.append(b)
             else:
                 raise Exception("이것은 bundle로 이미지 검색 문제입니다.")
-    else:
+    elif img_context_bundles[0] == 'bundle 없음':
         for id in img_context_ids:
+            if id=='-1':
+                continue
             base64=search_base64(id)
             if base64:
                 img_context.append(base64[0])
@@ -87,7 +89,10 @@ def img_prompt_func(data_dict):
             "You are an AI assistant capable of analyzing text and images.\n"
             "You will be given a mixed of text and image(s).\n"
             "Use this information to provide quality information related to the user question. \n"
-            "If there are no search results, please respond by saying '미안하다냥. 찾는 정보가 없는 것 같다냥!. \n"
+            #"If there are no search results, please respond by saying '미안하다냥. 찾는 정보가 없는 것 같다냥!. \n"
+            "If there are absolutely no relevant search results, respond by saying '미안하다냥. 찾는 정보가 없는 것 같다냥!'. \n" 
+            "However, if there are any relevant search results, generate an informative response based on the available information. \n"
+            "Do not falsely claim that there are no search results. \n"
             "Please answer in Korean.\n"
             f"User-provided question: {data_dict['question']}\n\n"
             "Text :\n"
