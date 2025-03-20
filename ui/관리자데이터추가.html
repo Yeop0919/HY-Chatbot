@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 데이터 추가</title>
+    <style>
+        body {  /* 메인 배경  */
+            background-color: #F8FAFC;
+            font-family: 'Pretendard';
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .flexbox {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            padding: 100px;
+        }
+        .container {   /* 텍스트 입력 폼을 감싸는 컨테이너  */
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 1000px;
+            height: 500px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }        
+        .input-group label {
+            font-size: 16px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px; 
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;  
+        }
+        .file-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .file-input-group input {
+            display: none;
+        }
+        .file-input-group button {
+            padding: 10px 15px;
+            background-color: #2762A2;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .file-input-group button:hover {
+            background-color: #2762A2;
+        }
+        .file-list {
+            padding: 10px;
+            border: 1px solid #CBD5E1;
+            border-radius: 5px;
+            background-color: #F8FAFC;
+            font-size: 14px;
+            max-height: 100px;
+            overflow-y: auto;
+            white-space: nowrap;
+        }
+        .file-list span {
+            display: inline-block;
+            padding: 5px;
+            margin-right: 10px;
+            background-color: #F8FAFC;
+            border-radius: 5px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #F8FAFC;
+            border-radius: 5px;
+            position: relative; 
+            width: fit-content; 
+        }        
+        .file-name-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }        
+        .file-name {
+            color: black;
+            font-size: 14px;
+            position: relative;
+            left: 5px; 
+            top: 5px; 
+        }
+        .delete-btn {
+            color: #DC635E;
+            cursor: pointer;
+            position: relative;
+            left: 10px; 
+            top: 1px; 
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .textarea-group textarea {
+            width: 100%;
+            min-height: 300px;
+            margin-top: 5px;
+            padding: 10px; 
+            border: 1px solid #CBD5E1;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: Arial, sans-serif; 
+            resize: vertical; 
+            box-sizing: border-box;  
+        }
+        .submit-btn {
+            background-color: #2762A2;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 7px;
+        }
+        .submit-btn:hover {
+            background-color: #94A3B8;
+        }
+        .home-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 40px; 
+            cursor: pointer;  
+            z-index: 100;
+        }
+        #date {
+            border-radius: 20px;
+            border: 1px solid #E2E8F0;
+            background: #FFF;
+        }
+
+        label {
+            color: #000;
+            font-family: 'Pretendard';
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 500;
+        }
+
+    </style>
+</head>
+<body>
+    <img src="home-btn.png" alt="Home" class="home-btn" onclick="window.location.href='index.html'">
+
+    <div class="flexbox">
+        <div class="container">
+            <div class="file-input-group">
+                <input type="file" id="file-input" multiple>
+                <button onclick="addFile()">파일 추가</button>
+            </div>
+
+            <div class="file-list" id="file-list">
+            </div>
+
+            <div class="textarea-group">
+                <textarea id="title" placeholder="텍스트를 입력하세요"></textarea>
+            </div>
+            <label for="date">날짜 입력 (YYYY-MM-DD):</label>
+            <input type="text" id="date" placeholder="ex) 2025-02-24" required><br><br>
+            <button class="submit-btn">저장</button>
+        </div>
+    </div>
+
+    <script>
+        function addFile() {
+            const fileInput = document.getElementById('file-input');
+            fileInput.click(); 
+        }    
+
+        document.getElementById('file-input').addEventListener('change', function() {
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            fileList.innerHTML = "";
+
+            if (this.files.length > 0) {
+                Array.from(this.files).forEach(file => {
+                    const fileItem = document.createElement('span');
+                    fileItem.textContent = file.name;
+                    const deleteBtn = document.createElement('span');
+                    deleteBtn.textContent = 'X';
+                    deleteBtn.classList.add('delete-btn');
+                    deleteBtn.addEventListener('click', function() {
+                        fileList.removeChild(fileItem);
+                    });
+                    fileItem.appendChild(deleteBtn);
+                    fileList.appendChild(fileItem);
+                    });
+                }
+            });
+
+    document.querySelector(".submit-btn").addEventListener("click", function () {
+        const title = document.getElementById("title").value.trim();
+        const fileInput = document.getElementById("file-input");
+        const dateValue = document.getElementById("date").value.trim();
+
+        // 날짜 형식 유효성 검사
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(dateValue)) {
+            alert("날짜 형식이 올바르지 않습니다.\n예) 2025-02-24");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("title", title || ""); // ✅ 빈 값이라도 title 추가
+        formData.append("date", dateValue);
+
+        // ✅ 파일 추가 (없을 경우 빈 Blob 추가)
+        if (fileInput.files.length > 0) {
+            for (let i = 0; i < fileInput.files.length; i++) {
+                formData.append("files", fileInput.files[i]);
+            }
+        } else {
+            formData.append("files", new Blob([]));  // ✅ 빈 파일 추가
+        }
+
+        fetch("http://211.39.140.39:27500/rest/upload", {
+            method: "POST",
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert("파일과 설명이 서버에 저장되었습니다!");
+            resetForm(); 
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("오류 발생: 저장에 실패했습니다.");
+        });
+    });
+
+    function resetForm() {
+        document.getElementById("title").value = "";
+        document.getElementById("file-input").value = "";
+        document.getElementById("file-list").innerHTML = "";
+        document.getElementById("date").value = ""; 
+    }        
+    </script>
+</body>
+</html>

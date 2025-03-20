@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="하냥이 PNG-38 1.png">
+    <title>미디어학과 공지 챗봇</title>
+    <style>
+        body {
+            background-color: #F8FAFC;
+            color: black;
+            font-family: 'Pretendard';
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .logo {
+            width: 321px;
+            height: 284px;
+            flex-shrink: 0;
+            aspect-ratio: 321/284;
+        }
+        .title {
+            width: 360px;
+            height: 48px;
+            margin-bottom: 40;
+            flex-shrink: 0;
+            font-size: 36px;
+            font-weight: 500;
+            opacity: 0;
+            animation: fadeIn 1.5s forwards;
+            animation-delay: 0.5s;
+        }
+        .center-icon {
+            width: 100px;
+            margin-bottom: 30px;
+        }
+        .fade-text {
+            opacity: 0;
+            font-size: 24px;
+            font-weight: 300;
+            animation: fadeIn 1.5s forwards;
+        }
+        .fade-text:nth-child(1) { animation-delay: 1.5s; }
+        .fade-text:nth-child(2) { animation-delay: 2.5s; }
+        .fade-text:nth-child(3) { animation-delay: 3.5s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chatbot-btn {
+            width: 320px;
+            height: 60px;
+            flex-shrink: 0;
+            aspect-ratio: 173/35;
+            border-radius: 40px;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            background: #CBD5E1;
+            border: none;
+            color: black;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        .chatbot-btn:hover {
+            border-radius: 40px;
+            background: #2762A2;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <img src="하냥이 PNG-38 1.png" alt="HYU Logo" class="logo">
+    <div class="title">당신만의 공지 챗봇</div>
+    <div>
+        <p class="fade-text">미디어학과의 공지부터 궁금한 정보까지,</p>
+        <p class="fade-text">지금 바로 대화를 시작해보세요!</p>
+        
+    </div>
+    <button class="chatbot-btn" onclick="location.href='연도선택.html'">시작하기</button>
+</body>
+</html>

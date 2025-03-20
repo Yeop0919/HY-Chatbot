@@ -224,7 +224,7 @@ def search_image_es(query: str, year_list: list, size: int = 10):
 
     es_query = {
         "_source": {
-            "excludes": ["img_base64"]  # 🔥 Base64 필드 제외
+            "excludes": ["img_base64"]
         },
         "query": {
             "bool": {
@@ -303,7 +303,7 @@ def search_base64(query: str, size: int = 1):
 
 #         hits = response.get("hits", {}).get("hits", [])
 
-#         # `img_base64` 필드만 추출하여 반환
+#         # img_base64 필드만 추출하여 반환
 #         base64_results = [
 #             hit["_source"]["img_base64"]
 #             for hit in hits
@@ -346,7 +346,6 @@ def search_base64_by_bundle(bundle, size: int = 15):
 
     finally:
         es.close()
-
 
 #===========================================================================================================
 

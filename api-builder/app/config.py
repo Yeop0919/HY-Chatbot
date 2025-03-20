@@ -101,15 +101,6 @@ class Settings(BaseSettings):
     ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME","elastic")
     ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "dpe6rbckQl59QctEE39K0sB8")
 
-    ELASTIC_CLOUD_URL: str = os.getenv("ELASTIC_CLOUD_URL", "https://18f9b789ff1643689ec7b7ae2d04f204.us-central1.gcp.cloud.es.io:443")
-    ELASTIC_API_KEY: str = os.getenv("ELASTIC_API_KEY", "NEJ6bkhwVUJ5UU52ZzM4M3M0Vjc6Znd3bnlSUHFScTZvU2xadk1yaEg3Zw==")
-    PORT: int = int(os.getenv("PORT", 8000))
-
-    ELASTIC_CLOUD_ID: str = os.getenv("ELASTIC_CLOUD_ID",
-                                      "My_deployment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJDE4ZjliNzg5ZmYxNjQzNjg5ZWM3YjdhZTJkMDRmMjA0JDI5NjNlODg0NTMzMzQyNmJhYWExMmE0YmYyODdmNWZm")
-    ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME", "elastic")
-    ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "dpe6rbckQl59QctEE39K0sB8")
-
 
 settings = Settings()  # type: ignore
 print(settings.json())
