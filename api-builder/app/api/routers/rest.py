@@ -105,7 +105,11 @@ async def post_search_results(request: LLMRequest):
 
         # LLM 답변 생성
         llm_start_time = time.time()
+<<<<<<< HEAD
+        llm_text_answer,add_question = llm_answer(user_query, text_reranked_result, image_reranked_result)
+=======
         llm_text_answer = llm_answer(user_query, text_reranked_result, image_reranked_result)
+>>>>>>> origin/main
         llm_end_time = time.time()
         elapsed_time.append(f"LLM 답변 생성 시간: {llm_end_time - llm_start_time:.4f}초")
 
@@ -122,10 +126,23 @@ async def post_search_results(request: LLMRequest):
         print("\n✅ [DEBUG] 검색 성공")  # 성공 로그
         for time_log in elapsed_time:
             print(time_log)  # 각 단계별 소요 시간 출력
+<<<<<<< HEAD
+        if add_question:
+            print(add_question)
+            return{
+            "llm_text_answer": llm_text_answer,
+            "add_question": add_question
+        }
+        else:
+            return {
+                "llm_text_answer": llm_text_answer
+            }
+=======
 
         return {
             "llm_text_answer": llm_text_answer
         }
+>>>>>>> origin/main
 
     except Exception as e:
         print(f"\n❌ [ERROR] 검색 중 오류 발생: {str(e)}")  # 오류 로그
@@ -288,6 +305,23 @@ async def emb_file():
     입력된 경로로부터 파일을 처리하는 GET 요청
     """
     try:
+<<<<<<< HEAD
+        folder_path = "/root/.vscode-server/chatbot_project/db_test3"
+        
+        # 전처리
+        #chunked_text = text_chunking(folder_path)
+        summarized_img = generate_img_summaries(folder_path)
+        
+        # milvus
+        #milvus_upload_text(chunked_text)
+        milvus_upload_image(summarized_img)
+        
+        # elasticsearch
+        #elastic_indexing_text(chunked_text)
+        elastic_indexing_image(summarized_img)
+        
+        #delete_directory("/root/.vscode-server/chatbot_project/notice_db")
+=======
         folder_path = "/root/.vscode-server/chatbot_project/notice_db"
         
         # 전처리
@@ -303,6 +337,7 @@ async def emb_file():
         elastic_indexing_image(summarized_img)
         
         delete_directory("/root/.vscode-server/chatbot_project/notice_db")
+>>>>>>> origin/main
         
         return JSONResponse(content={"message": "파일 처리 성공"})
     except Exception as e:

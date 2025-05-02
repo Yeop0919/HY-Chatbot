@@ -6,6 +6,17 @@
     <title>연도 선택</title>
     <style>
         body {
+<<<<<<< HEAD
+            background-color: #F8FAFC;
+            font-family: 'Pretendard';
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+=======
     width: 100vw;
     height: 100vh;
     text-align: center;
@@ -15,11 +26,26 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+>>>>>>> origin/main
 }
 
 /* 헤더 */
 /* 반응형 헤더 */
 .header {
+<<<<<<< HEAD
+    width: 1440px;
+    height: 65px;
+    flex-shrink: 0;
+    border-bottom: 1px solid #CBD5E1;
+    background: #F8FAFC;
+        
+}
+/* 컨테이너 */
+.container {
+    width: 100%;
+    max-width: 600px; /* 화면 너무 커지지 않게 */
+    margin-top: 5vh;  /* 위쪽 여백 */
+=======
     position: fixed;
     top: 0;
     left: 50%;
@@ -49,6 +75,7 @@
     width: 90%;
     max-width: 600px;
     margin-top: 5vh;
+>>>>>>> origin/main
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -56,6 +83,13 @@
 /* 뒤로 가기 버튼 (헤더 내부에 위치) */
 .back-btn {
     position: absolute;
+<<<<<<< HEAD
+    top: 15px;
+    left: 20px; 
+    width: 40px;
+    cursor: default;
+    z-index: 10;
+=======
     left: 1.5vw;
     top: -50%;  /* 헤더의 가운데 정렬 */
     transform: translateY(-50%); /* 수직 중앙 정렬 */  
@@ -69,6 +103,7 @@
     cursor: pointer;
     z-index: 1010;
     pointer-events: auto; /* 버튼 클릭 가능 */
+>>>>>>> origin/main
 }
 /* 연도 선택 문구 */
 .title {
@@ -76,10 +111,17 @@
     font-family: Pretendard;
     font-size: 1.8rem;  /* 반응형 조정 */
     font-style: normal;
+<<<<<<< HEAD
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    margin-top: 7vh;
+=======
     font-weight: 600;
     line-height: 1.5;
     text-align: left;
     margin-top: -7vh;
+>>>>>>> origin/main
     letter-spacing: -0.5px;
     transform: translateX(-95px); /* 왼쪽으로 20px 이동 */
 }
@@ -117,7 +159,11 @@
     font-family: Pretendard;
     font-size: 1.2rem; /* 반응형 조정 */
     font-style: normal;
+<<<<<<< HEAD
+    font-weight: 400;
+=======
     font-weight: 600;
+>>>>>>> origin/main
     text-align: left;
     display: flex;
     align-items: center;
@@ -126,12 +172,19 @@
 }
 /* 체크 아이콘 */
 .check-circle {
+<<<<<<< HEAD
+    width: 30px;
+    flex-shrink: 0;
+    cursor: default;
+    margin-top: 2vh;
+=======
     width: 2.5vw;
     height: 2.5vw;
     flex-shrink: 0;
     cursor: default;
     margin-top: 2vh;
     transform: translateX(-10px);
+>>>>>>> origin/main
 }
 /* 버튼 */
 button {
@@ -143,9 +196,14 @@ button {
     text-align: center;
     font-family: Pretendard;
     font-size: 1.5rem;
+<<<<<<< HEAD
+    font-weight: 400;
+    line-height: 1.5;
+=======
     font-weight: 600;
     line-height: 1.5;
     margin-top: 9vh;
+>>>>>>> origin/main
     border: none;
     outline: none;
 }
@@ -153,11 +211,23 @@ button {
 button:disabled {
     background-color: #aaa;
 }
+<<<<<<< HEAD
+
+.confirmBtn{
+    margin-top: 9vh;
+    align-self: center;
+}
+=======
+>>>>>>> origin/main
     </style>
 </head>
 <body>
     <header class="header">
+<<<<<<< HEAD
+        <img src="left-btn.png" alt="Back Icon" class="back-btn" onclick="location.href='메인화면.html'">
+=======
         <button class="back-btn" onclick="goBack();"></button>
+>>>>>>> origin/main
     </header>
     <div class="container">
         <h2 class="title">
@@ -178,7 +248,11 @@ button:disabled {
             </div>        
             <div class="section-bar"></div>
         </div>        
+<<<<<<< HEAD
+        <button id="confirmBtn" class="confirmBtn" onclick="goToMain()" disabled>확인</button>   
+=======
         <button id="confirmBtn" onclick="goToMain()" disabled>확인</button>        
+>>>>>>> origin/main
     </div>
 
     <script>

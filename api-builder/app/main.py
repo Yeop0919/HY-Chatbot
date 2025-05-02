@@ -36,7 +36,6 @@ from app import handlers
 from app.api.api_router import api_router
 from app.config import settings
 from app.constants import DESCRIPTION, SUMMARY, LICENSE_INFO
-from app.dependencies import get_token_header
 from app.exceptions.base import ApplicationError
 from app.log import setup_logging
 from app.version import GIT_REVISION, GIT_BRANCH, BUILD_DATE, GIT_SHORT_REVISION, VERSION, get_current_datetime

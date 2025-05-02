@@ -9,7 +9,12 @@ import requests
 from pymilvus import MilvusClient
 from openai import OpenAI
 from typing import List
+<<<<<<< HEAD
+import numpy as np
+from sentence_transformers import SentenceTransformer
+=======
 
+>>>>>>> origin/main
 def get_es_client():
     """
     Elasticsearch 로컬 클라이언트 생성
@@ -50,6 +55,17 @@ def extract_keywords(query: str):
 
 ### 날짜 추출 함수 (텍스트)
 def extract_date_from_query(query: str):
+<<<<<<< HEAD
+    now = datetime.now()
+    current_year = str(now.year)
+
+    # "년" 또는 "월" 단어가 있을 때만 인식
+    match = re.search(r'(\d{4})년\s*(\d{1,2})?월?', query)
+    if match:
+        year = match.group(1) if match.group(1) else current_year
+        month_raw = match.group(2)
+        month = month_raw.zfill(2) if month_raw else None
+=======
     """
     자연어 쿼리에서 날짜(YYYY-MM 또는 YYYY년 형태)를 추출하는 함수
     """
@@ -60,6 +76,7 @@ def extract_date_from_query(query: str):
     if match:
         year = match.group(1) if match.group(1) else current_year
         month = match.group(2).zfill(2) if match.group(2) else None
+>>>>>>> origin/main
 
         if month:
             return f"{year}-{month}", f"{year}-{month}"
@@ -68,6 +85,37 @@ def extract_date_from_query(query: str):
 
     return None, None
 
+<<<<<<< HEAD
+
+def extract_date_with_day_from_query(query: str):
+    now = datetime.now()
+    current_year = str(now.year)
+
+    # "년", "월", "일" 명시된 경우만 인식
+    match = re.search(r'(\d{4})년\s*(\d{1,2})?월?\s*(\d{1,2})?일?', query)
+    if match:
+        year = match.group(1) if match.group(1) else current_year
+        month_raw = match.group(2)
+        day_raw = match.group(3)
+
+        month = month_raw.zfill(2) if month_raw else None
+        day = day_raw.zfill(2) if day_raw else None
+
+        try:
+            if day and month:
+                return f"{year}-{month}-{day}", f"{year}-{month}-{day}"
+            elif month:
+                last_day = (datetime(int(year), int(month) % 12 + 1, 1) - timedelta(days=1)).day
+                return f"{year}-{month}-01", f"{year}-{month}-{last_day}"
+            else:
+                return f"{year}-01-01", f"{year}-12-31"
+        except ValueError:
+            return None, None
+
+    return None, None
+
+
+=======
 def extract_date_with_day_from_query(query: str):
     """
     자연어 쿼리에서 날짜(YYYY-MM-DD 또는 YYYY-MM)를 추출
@@ -91,6 +139,7 @@ def extract_date_with_day_from_query(query: str):
 
     return None, None
 
+>>>>>>> origin/main
 def text_index_sort(year_list: list):
     """
     색인 정리
@@ -99,7 +148,11 @@ def text_index_sort(year_list: list):
     if "2022-2024" in year_list:
         index_list.append("text_data")
     if "2025" in year_list:
+<<<<<<< HEAD
+        index_list.append("text_test_data")
+=======
         index_list.append("text_data_2025")
+>>>>>>> origin/main
     return ",".join(index_list)
 
 def image_index_sort(year_list: list):
@@ -110,11 +163,19 @@ def image_index_sort(year_list: list):
     if "2022-2024" in year_list:
         index_list.append("image_data")
     if "2025" in year_list:
+<<<<<<< HEAD
+        index_list.append("image_summary_by_bundle")
+    return ",".join(index_list)
+
+
+def search_text_es(query: str, year_list: list, size: int = 5):
+=======
         index_list.append("image_data_2025")
     return ",".join(index_list)
 
 
 def search_text_es(query: str, year_list: list, size: int = 10):
+>>>>>>> origin/main
     """
     로컬 Elasticsearch에서 본문 검색 (BM25 점수만 반환)
     """
@@ -123,7 +184,11 @@ def search_text_es(query: str, year_list: list, size: int = 10):
     keywords = extract_keywords(query)
     if index_name == "text_data":
         start_date, end_date = extract_date_from_query(query)
+<<<<<<< HEAD
+    elif index_name == "text_test_data":
+=======
     elif index_name == "text_data_2025":
+>>>>>>> origin/main
         start_date, end_date = extract_date_with_day_from_query(query)
 
     filter_conditions = []
@@ -322,7 +387,11 @@ def search_base64_by_bundle(bundle, size: int = 15):
     """
     로컬 Elasticsearch에서 같은 bundle을 가진 이미지 묶음을 검색
     """
+<<<<<<< HEAD
+    index_name = "image_summary_by_bundle"
+=======
     index_name = "image_data_2025"
+>>>>>>> origin/main
 
     es = get_es_client()
 
@@ -356,6 +425,25 @@ OPENAI_API_KEY = os.getenv("sk-proj-RCVlGyQtnV_r2663gZSo620aAv180QRjXUDw-Qmp2-qb
 embedding_dim=1536
 openai_client = OpenAI()
 def emb_text(text):
+<<<<<<< HEAD
+    openai_client = OpenAI()
+    embedding = openai_client.embeddings.create(
+        input=text,
+        model="text-embedding-3-small"
+    ).data[0].embedding
+
+    # L2 정규화
+    norm = np.linalg.norm(embedding)
+    normalized_embedding = embedding if norm == 0 else np.array(embedding) / norm
+
+    return normalized_embedding.tolist()
+
+def emb_text_m3(text):
+    model = SentenceTransformer("BAAI/bge-m3")
+    embeddings = model.encode(text, normalize_embeddings=True)
+    return embeddings
+milvus_client = milvus_client = MilvusClient(uri="https://in03-dbd74f1258371d3.serverless.gcp-us-west1.cloud.zilliz.com", token='fa1f36a89363e5d2a25a0676e69d9c2bee0c5b46b5e4ae8673291004058a395e40c6224470e6f068276885886e200fdfc60e3483')
+=======
     return (
         openai_client.embeddings.create(input=text, model="text-embedding-3-small")
         .data[0]
@@ -363,6 +451,7 @@ def emb_text(text):
     )
 
 milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com", token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
+>>>>>>> origin/main
 
 
 def milvus_text_search(user_query,year):
@@ -370,15 +459,26 @@ def milvus_text_search(user_query,year):
     if year=='2022-2024':
         collection_name = "txt_collection"
     elif year == '2025':
+<<<<<<< HEAD
+        collection_name="text_collection"
+=======
         collection_name="text_2025_collection"
+>>>>>>> origin/main
     try:
         search_res = milvus_client.search(
         collection_name=collection_name,
         data=[
+<<<<<<< HEAD
+            emb_text_m3(question)
+        ],
+        #limit=10,
+        limit=5,
+=======
             emb_text(question)
         ],
         limit=10,
         #limit=5,
+>>>>>>> origin/main
         search_params={"metric_type": "IP", "params": {}},  # Inner product distance
         output_fields=["text","metadata"],
         )
@@ -405,7 +505,11 @@ def milvus_image_search(user_query,year):
     if year=='2022-2024':
         collection_name = "img_collection"
     elif year == '2025':
+<<<<<<< HEAD
+        collection_name="summary_by_bundle"
+=======
         collection_name="image_2025_collection"
+>>>>>>> origin/main
     try:
         search_res = milvus_client.search(
         collection_name=collection_name,
@@ -413,7 +517,11 @@ def milvus_image_search(user_query,year):
             emb_text(question)
         ],
         limit=10,
+<<<<<<< HEAD
+        #limit=8,
+=======
         #limit=5,
+>>>>>>> origin/main
         search_params={"metric_type": "IP", "params": {}},  # Inner product distance
         output_fields=["img_summary",'metadata'],
         )

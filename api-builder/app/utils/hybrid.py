@@ -29,6 +29,10 @@ def txt_hybrid_search(dense_results, sparse_results, dense_weight, sparse_weight
     combined_results = {}
     for result in sparse_results:
         combined_results[result["_id"]] = {
+<<<<<<< HEAD
+            "id": result["_id"],
+=======
+>>>>>>> origin/main
             "text": result["_source"]["page_content"],
             "sparse_score": result["normalized_score"],
             "dense_score": 0,
@@ -39,6 +43,10 @@ def txt_hybrid_search(dense_results, sparse_results, dense_weight, sparse_weight
             combined_results[str(result["id"])]["dense_score"] = result["normalized_score"]
         else:
             combined_results[str(result["id"])] = {
+<<<<<<< HEAD
+                "id": str(result['id']),
+=======
+>>>>>>> origin/main
                 "text": result["text"],
                 "sparse_score": 0,
                 "dense_score": result["normalized_score"],

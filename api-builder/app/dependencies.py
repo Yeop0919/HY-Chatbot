@@ -52,6 +52,8 @@ async def get_current_user(api_key: str = Security(api_key_header)):
 
     return {"user": "authenticated"}
 
+<<<<<<< HEAD
+=======
 
 # import os
 # import hashlib
@@ -103,6 +105,7 @@ async def get_current_user(api_key: str = Security(api_key_header)):
 
 #     logger.info("✅ 환경변수 검증 완료")
 
+>>>>>>> origin/main
 # FastAPI API Key 인증 함수
 async def get_current_user(api_key: str = settings.ELASTIC_API_KEY):
     if not api_key:
@@ -112,7 +115,10 @@ async def get_current_user(api_key: str = settings.ELASTIC_API_KEY):
     logger.info(f"✅ API Key 인증 성공: {repr(api_key)}")
     return {"user": "authenticated"}
 
+<<<<<<< HEAD
+=======
 # 환경변수 체크 실행
 # debug_api_key()
+>>>>>>> origin/main
 
 
