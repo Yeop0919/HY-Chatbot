@@ -15,13 +15,13 @@ import time
 <<<<<<< HEAD
 import numpy as np
 from sentence_transformers import SentenceTransformer
-milvus_client = milvus_client = MilvusClient(uri="https://in03-dbd74f1258371d3.serverless.gcp-us-west1.cloud.zilliz.com", token='fa1f36a89363e5d2a25a0676e69d9c2bee0c5b46b5e4ae8673291004058a395e40c6224470e6f068276885886e200fdfc60e3483')
+milvus_client = milvus_client = MilvusClient(uri="-", token='-')
 =======
 
-milvus_client = milvus_client = MilvusClient(uri="https://in03-0e20997fb5c4a00.serverless.gcp-us-west1.cloud.zilliz.com", token='6c5c4aca5950756003f5db05fa289b291aa796575bb9d2bd5ee3f41d6391be6237b3cab4c3c42b877b77409b4337e424d740b3b2')
+milvus_client = milvus_client = MilvusClient(uri="-", token='-')
 >>>>>>> origin/main
-os.environ["OPENAI_API_KEY"] = "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"
-OPENAI_API_KEY = os.getenv("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")
+os.environ["OPENAI_API_KEY"] = "-"
+OPENAI_API_KEY = os.getenv("-")
 
 def get_text_bundle(base_folder_path):
     docs=[]
