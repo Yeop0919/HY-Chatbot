@@ -2,8 +2,8 @@
 from app.utils.ela import search_base64, search_base64_by_bundle
 import os
 
-os.environ["OPENAI_API_KEY"] = "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"
-OPENAI_API_KEY = os.getenv("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")
+os.environ["OPENAI_API_KEY"] = "-"
+OPENAI_API_KEY = os.getenv("-")
 
 
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
