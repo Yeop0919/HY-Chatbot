@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException, Request, Depends, File, Form, UploadFile
 from pydantic import BaseModel
 from typing import List
-from app.dependencies import get_current_user 
+from app.dependencies import get_current_user
 from app.utils.ela import search_text_es, search_image_es, milvus_text_search, milvus_image_search
 from app.utils.hybrid import tmm_norm_elastic,tmm_norm_milvus, txt_hybrid_search, img_hybrid_search
 from app.utils.reranking import txt_reranking, img_reranking
@@ -23,15 +23,6 @@ class LLMRequest(BaseModel):
 class ChatResponse(BaseModel):
     llm_answer: str
 
-
-#@router.post("/collection", summary="데이터 수집 모듈", description="서버에 임시 저장된 공지 데이터들을 수집하여 정제 후 데이터베이스에 업로드")
-#async def collect_data(request: LLMRequest):
-    """
-    🔹 사용자의 입력을 받아 검색을 수행하는 POST 요청
-    - Elasticsearch 및 Milvus에서 텍스트 및 이미지 검색 수행
-    - Hybrid Search 및 Reranking 적용 후 결과 반환
-    - llm을 통한 최종답변 생성
-    """
 
 @router.post("/llm_answer", summary="검색 수행 후 답변", description="사용자의 입력을 받아 공지사항 및 이미지 검색 후 llm으로 최종답변 생성")
 async def post_search_results(request: LLMRequest):
@@ -105,11 +96,7 @@ async def post_search_results(request: LLMRequest):
 
         # LLM 답변 생성
         llm_start_time = time.time()
-<<<<<<< HEAD
-        llm_text_answer,add_question = llm_answer(user_query, text_reranked_result, image_reranked_result)
-=======
-        llm_text_answer = llm_answer(user_query, text_reranked_result, image_reranked_result)
->>>>>>> origin/main
+        llm_text_answer, add_question = llm_answer(user_query, text_reranked_result, image_reranked_result)
         llm_end_time = time.time()
         elapsed_time.append(f"LLM 답변 생성 시간: {llm_end_time - llm_start_time:.4f}초")
 
@@ -126,29 +113,21 @@ async def post_search_results(request: LLMRequest):
         print("\n✅ [DEBUG] 검색 성공")  # 성공 로그
         for time_log in elapsed_time:
             print(time_log)  # 각 단계별 소요 시간 출력
-<<<<<<< HEAD
+
         if add_question:
             print(add_question)
-            return{
-            "llm_text_answer": llm_text_answer,
-            "add_question": add_question
-        }
+            return {
+                "llm_text_answer": llm_text_answer,
+                "add_question": add_question
+            }
         else:
             return {
                 "llm_text_answer": llm_text_answer
             }
-=======
-
-        return {
-            "llm_text_answer": llm_text_answer
-        }
->>>>>>> origin/main
 
     except Exception as e:
         print(f"\n❌ [ERROR] 검색 중 오류 발생: {str(e)}")  # 오류 로그
         raise HTTPException(status_code=500, detail=f"서버 내부 오류: {str(e)}")
-    
-    #combine_results(keyword_results, )
 
 
 from pathlib import Path
@@ -163,6 +142,7 @@ import uuid
 import json
 from typing import Optional
 from datetime import datetime
+from app.config import settings
 
 @router.get("/", response_class=HTMLResponse)
 async def upload_form():
@@ -214,7 +194,7 @@ async def upload_form():
             }
 
             // 서버에 POST 요청
-            fetch("http://localhost:27500/rest/upload", {
+            fetch("/rest/upload", {
                 method: "POST",
                 body: formData
             })
@@ -235,9 +215,9 @@ async def upload_form():
 
 @router.post("/upload")
 async def upload_file(
-    title: str = Form(""),  
-    date: str = Form(...),  
-    files: Optional[list[UploadFile]] = File(None)  # ✅ None을 허용하도록 수정
+    title: str = Form(""),
+    date: str = Form(...),
+    files: Optional[list[UploadFile]] = File(None)
 ):
     """ 업로드된 텍스트와 파일을 서버에 저장 + 날짜 정보를 JSON으로 저장 """
 
@@ -247,18 +227,18 @@ async def upload_file(
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
-    BASE_SAVE_DIRECTORY = Path("/root/.vscode-server/chatbot_project/notice_db")
-    BASE_SAVE_DIRECTORY.mkdir(parents=True, exist_ok=True)
+    base_save_directory = Path(settings.NOTICE_DB_PATH)
+    base_save_directory.mkdir(parents=True, exist_ok=True)
 
-    unique_folder_name = str(uuid.uuid4())  
-    save_directory = BASE_SAVE_DIRECTORY / unique_folder_name
+    unique_folder_name = str(uuid.uuid4())
+    save_directory = base_save_directory / unique_folder_name
     save_directory.mkdir(parents=True, exist_ok=True)
 
     image_folder = save_directory / "images"
     image_folder.mkdir(parents=True, exist_ok=True)
 
     file_locations = []
-    
+
     # ✅ 파일 저장 (파일이 있는 경우만 실행)
     if files:
         for file in files:
@@ -299,48 +279,29 @@ from app.utils.collection import milvus_upload_text, milvus_upload_image
 from app.utils.collection import elastic_indexing_text, elastic_indexing_image
 
 # 업로드된 파일 임베딩, 색인
-@router.get("/emb")
+@router.post("/emb")
 async def emb_file():
     """
-    입력된 경로로부터 파일을 처리하는 GET 요청
+    /rest/upload 로 쌓인 공지 원본(텍스트+이미지)을 전처리하여
+    Milvus(벡터 검색)와 Elasticsearch(키워드 검색)에 함께 색인한다.
     """
     try:
-<<<<<<< HEAD
-        folder_path = "/root/.vscode-server/chatbot_project/db_test3"
-        
-        # 전처리
-        #chunked_text = text_chunking(folder_path)
-        summarized_img = generate_img_summaries(folder_path)
-        
-        # milvus
-        #milvus_upload_text(chunked_text)
-        milvus_upload_image(summarized_img)
-        
-        # elasticsearch
-        #elastic_indexing_text(chunked_text)
-        elastic_indexing_image(summarized_img)
-        
-        #delete_directory("/root/.vscode-server/chatbot_project/notice_db")
-=======
-        folder_path = "/root/.vscode-server/chatbot_project/notice_db"
-        
+        folder_path = settings.NOTICE_DB_PATH
+
         # 전처리
         chunked_text = text_chunking(folder_path)
         summarized_img = generate_img_summaries(folder_path)
-        
+
         # milvus
         milvus_upload_text(chunked_text)
         milvus_upload_image(summarized_img)
-        
+
         # elasticsearch
         elastic_indexing_text(chunked_text)
         elastic_indexing_image(summarized_img)
-        
-        delete_directory("/root/.vscode-server/chatbot_project/notice_db")
->>>>>>> origin/main
-        
+
+        delete_directory(folder_path)
+
         return JSONResponse(content={"message": "파일 처리 성공"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"오류 발생: {str(e)}")
-    
-        
