@@ -40,10 +40,7 @@
     <style>
         body {
             background-color: #F8FAFC;
-<<<<<<< HEAD
-=======
             color: white;
->>>>>>> origin/main
             font-family: 'Pretendard';
             margin: 0;
             padding: 0;
@@ -194,13 +191,8 @@
             outline: none;
             border-radius: 30px;
             resize: none; 
-<<<<<<< HEAD
-            height: 20px;  
-            min-height: 20px; 
-=======
             height: 30px;  
             min-height: 50px; 
->>>>>>> origin/main
             max-height: 250px; 
             line-height: 1.5;
             background: none;
@@ -283,46 +275,6 @@
             background: #F8FAFC;
             margin-bottom: 10px;
         }
-<<<<<<< HEAD
-        .recommend-wrapper {
-    display: flex;
-    gap: 10px;
-    margin: 5px;
-    align-self: flex-start;
-    animation: fadeIn 0.5s ease-in;
-}
-
-.recommend-question {
-    background-color: #E2E8F0;
-    color: #000;
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    white-space: pre-wrap;
-}
-
-.recommend-button {
-    background-color: #2762A2;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-}
-
-.recommend-question:hover {
-    background-color: #1e4e7e;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-=======
->>>>>>> origin/main
     </style>
 </head>
 <body>
@@ -345,13 +297,7 @@
         <img src="setting-btn.png" alt="Settings" class="setting-icon" onclick="location.href='관리자화면.html'">
     </div>
     
-<<<<<<< HEAD
-    <div class="chat-container" id="chat-container">
-        <div id="recommend-container"></div>
-    </div>
-=======
     <div class="chat-container" id="chat-container"></div>
->>>>>>> origin/main
 
     <div class="search-container"> 
         <div class="search-results"> <!-- 화면에선 보이진 않는데 아래 함수와 연결되어 있음 -->
@@ -441,27 +387,9 @@ function addHynangTypingMessage() {
     return messageDiv;
 }
 
-<<<<<<< HEAD
-window.isWaitingForResponse = false;  // 응답 대기 상태 변수
-
-window.sendQuery = async function () {
-    console.log("✅ [DEBUG] sendQuery 실행됨");
-
-    if (window.isWaitingForResponse) {
-        // 중복 요청 방지: 이미 응답 대기 중이면 알림만 출력
-        if (!window.alertTriggered) {
-            window.alertTriggered = true;
-            alert("답변 출력 중이다냥! 조금만 기다리라냥!");
-            setTimeout(() => { window.alertTriggered = false; }, 500);
-        }
-        return;
-    }
-
-=======
 window.sendQuery = async function() {
     console.log("✅ [DEBUG] sendQuery 실행됨");
 
->>>>>>> origin/main
     const queryInput = document.getElementById("queryInput");
 
     if (!queryInput) {
@@ -470,21 +398,13 @@ window.sendQuery = async function() {
     }
 
     const query = queryInput.value.trim();
-<<<<<<< HEAD
-    const selectedYear = localStorage.getItem("selectedYear");
-=======
     const selectedYear = localStorage.getItem("selectedYear"); // ✅ 저장된 연도를 가져오기
->>>>>>> origin/main
 
     console.log("🔹 입력된 검색어:", query);
     console.log("🔹 선택된 연도:", selectedYear);
 
     if (!query) {
-<<<<<<< HEAD
-        if (!window.alertTriggered) {
-=======
         if (!window.alertTriggered) {  
->>>>>>> origin/main
             window.alertTriggered = true;
             alert("검색어를 입력해달라냥!");
             setTimeout(() => { window.alertTriggered = false; }, 500);
@@ -492,18 +412,6 @@ window.sendQuery = async function() {
         return;
     }
 
-<<<<<<< HEAD
-    // 사용자 메시지를 채팅창에 추가
-    addUserMessage(query);
-
-    // ✅ 응답 대기 상태로 전환
-    window.isWaitingForResponse = true;
-
-    // 1초 후 "응답을 출력하고 있다냥!" 출력 → 이후 서버 요청
-    setTimeout(() => {
-        addHynangTypingMessage();
-
-=======
     // 사용자 메시지를 채팅창에 추가.
     addUserMessage(query);
 
@@ -512,72 +420,10 @@ window.sendQuery = async function() {
         addHynangTypingMessage();
 
         // "응답을 출력하고 있다냥!"이 출력된 후에 서버 요청을 보냄.
->>>>>>> origin/main
         fetch("http://211.39.140.39:27500/rest/llm_answer", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-<<<<<<< HEAD
-                user_query: query,
-                selected_year: selectedYear
-            })
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`서버 오류: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-    console.log("✅ [DEBUG] 서버 응답 데이터:", data);
-
-    const imageUrl = data.image_url || null;
-    const hynangResponse = data.llm_text_answer || "이해할 수 없는 질문이다냥.\n다시 질문해 달라냥! \n아니면 이런 질문을 보내는 건 어떻게 생각하냥?";
-
-    // 🔍 실패 메시지 패턴 리스트
-    const failurePatterns = [
-        "이해할 수 없는 질문이다냥",
-        "찾는 정보가 없는 것 같다냥",
-        "미안하다냥",
-        "답변을 찾을 수 없다냥"
-    ];
-
-    // 🔎 하냥이 답변이 실패 패턴에 해당하는지 확인
-    const isFailureResponse = failurePatterns.some(p => hynangResponse.includes(p));
-
-    if (isFailureResponse) {
-        addHynangMessage(null, hynangResponse, false, 40, true);
-
-        // ⭐ 서버가 추천 질문을 주면 그것 사용, 없으면 기본값
-        const fallbackQuery = data.add_question;
-        
-        // 중괄호 제거 로직 추가
-        const cleanedFallbackQuery = fallbackQuery?.replace(/^\{|\}$/g, '').trim();
-
-        const recommended = data.recommended_query || cleanedFallbackQuery;
-        showFollowUpSuggestion(recommended);
-
-        window.isWaitingForResponse = false;
-    } else {
-        // ✅ 정상 응답
-        setTimeout(() => {
-            addHynangMessage(imageUrl, hynangResponse, false, 40, false);
-            window.isWaitingForResponse = false;
-        }, 2500);
-    }
-})
-
-            .catch(error => {
-                console.error("❌ 검색 요청 실패:", error);
-                alert("❌ 검색 요청 중 오류가 발생했습니다.");
-                window.isWaitingForResponse = false;  // 오류 발생 시도 리셋
-            });
-    }, 1000);
-
-    queryInput.value = "";
-};
-
-=======
                 user_query: query, 
                 selected_year: selectedYear
             })
@@ -611,7 +457,6 @@ window.sendQuery = async function() {
     }, 1000); //1초 후 "응답을 출력하고 있다냥!" 출력.(이후 서버 요청)    
     queryInput.value = "";
 };
->>>>>>> origin/main
 // 사용자 메시지 추가 함수.
 function addUserMessage(messageText) {
     const chatContainer = document.getElementById("chat-container");
@@ -906,46 +751,6 @@ function scrollToLastHynangMessage() {
         lastHynangMessage.scrollIntoView({ behavior: "smooth", block: "end" });
     }
 }
-<<<<<<< HEAD
-function showFollowUpSuggestion(questionText) {
-    const chatContainer = document.getElementById("chat-container");
-
-    // 이전 추천 질문이 있다면 제거 (중복 방지)
-    const oldSuggestion = document.querySelector(".recommend-wrapper");
-    if (oldSuggestion) oldSuggestion.remove();
-
-    // 추천 질문 묶음 생성
-    const wrapper = document.createElement("div");
-    wrapper.className = "recommend-wrapper";
-
-    // 질문 -> 버튼
-    const suggestedButton = document.createElement("button");
-    suggestedButton.className = "recommend-question"; 
-    suggestedButton.innerText = questionText;
-    suggestedButton.style.cursor = "pointer"; 
-    suggestedButton.style.border = "none"; 
-    suggestedButton.style.backgroundColor = "#E2E8F0"; 
-    suggestedButton.style.color = "#000";
-    suggestedButton.style.padding = "8px 12px";
-    suggestedButton.style.borderRadius = "20px";
-    suggestedButton.style.fontSize = "14px";
-    suggestedButton.style.whiteSpace = "pre-wrap";
-
-    // 버튼 클릭 시 동작
-    suggestedButton.addEventListener("click", () => {
-        document.getElementById("queryInput").value = questionText;
-        sendQuery();
-    });
-
-    wrapper.appendChild(suggestedButton);
-    chatContainer.appendChild(wrapper);
-
-    // 최신 위치로 스크롤
-    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
-}
-
-=======
->>>>>>> origin/main
 </script>
 </body>
 </html>

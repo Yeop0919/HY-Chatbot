@@ -12,16 +12,10 @@ from app.config import settings
 import requests
 import json
 import time
-<<<<<<< HEAD
 import numpy as np
 from sentence_transformers import SentenceTransformer
-milvus_client = milvus_client = MilvusClient(uri="-", token='-')
-=======
 
-milvus_client = milvus_client = MilvusClient(uri="-", token='-')
->>>>>>> origin/main
-os.environ["OPENAI_API_KEY"] = "-"
-OPENAI_API_KEY = os.getenv("-")
+milvus_client = MilvusClient(uri=os.getenv("MILVUS_URI", ""), token=os.getenv("MILVUS_TOKEN", ""))
 
 def get_text_bundle(base_folder_path):
     docs=[]
@@ -44,7 +38,7 @@ def get_text_bundle(base_folder_path):
         if txt_path == None:
             continue
         with open(txt_path, "r", encoding="utf-8") as txt_file, \
-            open(json_path, "r", encoding="utf-8") as json_file: 
+            open(json_path, "r", encoding="utf-8") as json_file:
             text_content = txt_file.read()       # .txt 파일 내용
             json_content = json.load(json_file)  # .json 파일 내용 (파싱)
 
@@ -65,7 +59,6 @@ def text_chunking(base_folder_path):
 
 def emb_text(text):
     openai_client = OpenAI()
-<<<<<<< HEAD
     embedding = openai_client.embeddings.create(
         input=text,
         model="text-embedding-3-small"
@@ -81,6 +74,7 @@ def emb_text_m3(text):
     model = SentenceTransformer("BAAI/bge-m3")
     embeddings = model.encode(text, normalize_embeddings=True)
     return embeddings
+
 def to_upload_milvus_text(texts):
     data = []
     for line in tqdm(texts, desc="Creating embeddings"):
@@ -89,34 +83,14 @@ def to_upload_milvus_text(texts):
 
 def create_2025_text_milvus_collection():
     collection_name = "text_collection"
-=======
-    return (
-        openai_client.embeddings.create(input=text, model="text-embedding-3-small")
-        .data[0]
-        .embedding
-    )
 
-def to_upload_milvus_text(texts):
-    data = []
-    for line in tqdm(texts, desc="Creating embeddings"):
-        data.append({"metadata":line.metadata, "vector": emb_text(line.page_content), "text": line.page_content})
-    return data
-
-def create_2025_text_milvus_collection():
-    collection_name = "text_2025_collection"
->>>>>>> origin/main
-    
     if milvus_client.has_collection(collection_name):
         print(f"Collection '{collection_name}' already exists. Skip creation.")
         return collection_name
 
     milvus_client.create_collection(
         collection_name=collection_name,
-<<<<<<< HEAD
         dimension=1024,
-=======
-        dimension=1536,
->>>>>>> origin/main
         metric_type="IP",
         consistency_level="Strong",
     )
@@ -139,8 +113,6 @@ def encode_image(image_path):
     """Getting the base64 string"""
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
-<<<<<<< HEAD
-    
 
 
 def image_summarize_total(img_base64_list):
@@ -190,14 +162,6 @@ def image_summarize_with_context(img_base64, context_text):
             - 구체적이고 요점을 간결하게 정리해주세요.
             - 결과는 한국어로 작성해 주세요.
             """
-=======
-
-
-def image_summarize(img_base64, prompt):
-    """Make image summary"""
-    chat = ChatOpenAI(model="gpt-4o", max_tokens=400)
-
->>>>>>> origin/main
     msg = chat.invoke(
         [
             HumanMessage(
@@ -222,19 +186,9 @@ def generate_img_summaries(base_folder_path):
     # Prompt
     from tqdm import tqdm
 
-<<<<<<< HEAD
-=======
-    prompt = """You are an assistant tasked with summarizing images for retrieval. \
-        These summaries will be embedded and used to retrieve the raw image. \
-        Give a concise summary of the image that is well optimized for retrieval. \
-        Summarize all the important information in the image while preserving key details. \
-        Focus on summarizing the textual elements within the image and exclude any design-related aspects.\
-        Write it in Korean."""
->>>>>>> origin/main
-    
     final_image_data=[]
     folders = os.listdir(base_folder_path)
-    
+
     for folder in folders:
         folder_path = os.path.join(base_folder_path, folder)
         all_items = os.listdir(folder_path)
@@ -242,7 +196,7 @@ def generate_img_summaries(base_folder_path):
         for item in all_items:
             full_path = os.path.join(folder_path, item)
             if os.path.isdir(full_path):
-                image_folder=full_path    
+                image_folder=full_path
         image_files=os.listdir(image_folder)
         if image_files==['blob']:
             continue
@@ -250,33 +204,21 @@ def generate_img_summaries(base_folder_path):
         img_base64_list = []
         # Store image summaries
         image_summaries = []
-<<<<<<< HEAD
         for img_file in tqdm(sorted(image_files), desc="encoding images"):
-=======
-        for img_file in tqdm(sorted(image_files), desc="Processing images"):
->>>>>>> origin/main
             img_path = os.path.join(image_folder, img_file)
             try:
                 base64_image = encode_image(img_path)
                 img_base64_list.append(base64_image)
-<<<<<<< HEAD
-=======
-                image_summaries.append(image_summarize(base64_image, prompt))
->>>>>>> origin/main
-                
 
             except Exception as e:
                 print(f"Error processing image {img_file}: {e}")
-<<<<<<< HEAD
-        
+
         total_summary=image_summarize_total(img_base64_list)
         for base_64 in tqdm(img_base64_list, desc="Processing images"):
             try:
                 image_summaries.append(image_summarize_with_context(base_64,total_summary))
             except Exception as e:
                 print(f"Error processing image {img_file}: {e}")
-=======
->>>>>>> origin/main
         json_path = None
         for item in all_items:
             full_path = os.path.join(folder_path, item)
@@ -302,16 +244,12 @@ def to_upload_milvus_image(image_datas):
         img_data=[]
         for line in tqdm(image_data, desc="Creating embeddings"):
             img_data.append({ "vector": emb_text(line['summary']), "img_summary": line['summary'],"metadata":line['metadata']})
-        final_img_data.append(img_data)    
+        final_img_data.append(img_data)
     return final_img_data
 
 def create_2025_image_milvus_collection():
-<<<<<<< HEAD
     collection_name = "summary_by_bundle"
-=======
-    collection_name = "image_2025_collection"
->>>>>>> origin/main
-    
+
     if milvus_client.has_collection(collection_name):
         print(f"Collection '{collection_name}' already exists. Skip creation.")
         return collection_name
@@ -358,11 +296,11 @@ def get_max_id(index_name):
 
         response = es.count(index=index_name)
         return response["count"]
-    
+
     except Exception as e:
         print(f"❌ 문서 개수 조회 중 오류 발생: {e}")
         return 0
-    
+
     finally:
         es.close()
 
@@ -399,11 +337,7 @@ def elastic_indexing_text(docs):
     text 데이터 색인 실행
     """
     es = get_es_client()
-<<<<<<< HEAD
     index_name = "text_test_data"
-=======
-    index_name = "text_data_2025"
->>>>>>> origin/main
 
     try:
         create_text_mapping(index_name)
@@ -463,11 +397,7 @@ def elastic_indexing_image(docs):
     image 데이터 색인 실행
     """
     es = get_es_client()
-<<<<<<< HEAD
     index_name = "image_summary_by_bundle"
-=======
-    index_name = "image_data_2025"
->>>>>>> origin/main
 
     try:
         create_image_mapping(index_name)
@@ -498,7 +428,6 @@ def elastic_indexing_image(docs):
         es.close()
 
 
-import os
 import shutil
 
 def delete_directory(directory_path: str):
@@ -509,12 +438,12 @@ def delete_directory(directory_path: str):
         # 디렉토리 내부의 모든 파일과 폴더 삭제
         for filename in os.listdir(directory_path):
             file_path = os.path.join(directory_path, filename)
-            
+
             # 파일 삭제
             if os.path.isfile(file_path):
                 os.remove(file_path)
                 print(f"✅ 파일 삭제 완료: {file_path}")
-            
+
             # 폴더 삭제
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)

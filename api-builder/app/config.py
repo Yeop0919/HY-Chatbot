@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-import os
 from typing import Literal, List, Annotated, Any, Union, Dict
 
 from pydantic import AnyUrl, BeforeValidator, computed_field, field_validator
@@ -90,17 +89,17 @@ class Settings(BaseSettings):
     # Backend
     BACKEND_CORS_ORIGINS: Annotated[Union[List[AnyUrl], str], BeforeValidator(parse_cors)] = ["http://localhost:8001", "http://localhost:3000", "http://localhost:8000", "http://localhost:27500"]
 
-    # Service Config
-    X_TOKEN: str = "wisenut"
-    
-    ELASTIC_CLOUD_URL: str = os.getenv("ELASTIC_CLOUD_URL", "https://18f9b789ff1643689ec7b7ae2d04f204.us-central1.gcp.cloud.es.io:443")
-    ELASTIC_API_KEY: str = os.getenv("ELASTIC_API_KEY", "NEJ6bkhwVUJ5UU52ZzM4M3M0Vjc6Znd3bnlSUHFScTZvU2xadk1yaEg3Zw==")
-    PORT: int = int(os.getenv("PORT", 8000))
-    
-    ELASTIC_CLOUD_ID: str = os.getenv("ELASTIC_CLOUD_ID","My_deployment:dXMtY2VudHJhbDEuZ2NwLmNsb3VkLmVzLmlvJDE4ZjliNzg5ZmYxNjQzNjg5ZWM3YjdhZTJkMDRmMjA0JDI5NjNlODg0NTMzMzQyNmJhYWExMmE0YmYyODdmNWZm")
-    ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME","elastic")
-    ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "dpe6rbckQl59QctEE39K0sB8")
+    # 업로드된 공지 원본(텍스트+이미지)이 임시로 쌓이는 경로.
+    # /rest/upload 가 여기에 저장하고, /rest/emb 가 여기서 읽어 임베딩/색인한다.
+    NOTICE_DB_PATH: str = os.getenv("NOTICE_DB_PATH", "./data/notice_db")
+
+    # 로컬 Elasticsearch로 이전하면서 더 이상 쓰지 않지만, 과거 클라우드 배포와
+    # 연결할 일이 있을 경우를 대비해 환경변수로만 주입받는다 (기본값 없음).
+    ELASTIC_CLOUD_URL: str = os.getenv("ELASTIC_CLOUD_URL", "")
+    ELASTIC_CLOUD_ID: str = os.getenv("ELASTIC_CLOUD_ID", "")
+    ELASTIC_API_KEY: str = os.getenv("ELASTIC_API_KEY", "")
+    ELASTIC_USERNAME: str = os.getenv("ELASTIC_USERNAME", "elastic")
+    ELASTIC_PASSWORD: str = os.getenv("ELASTIC_PASSWORD", "")
 
 
 settings = Settings()  # type: ignore
-print(settings.json())

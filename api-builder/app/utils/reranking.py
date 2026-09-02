@@ -2,13 +2,8 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
 def txt_reranking(user_query, initial_results):
-<<<<<<< HEAD
     tokenizer = AutoTokenizer.from_pretrained("Dongjin-kr/ko-reranker")
     model = AutoModelForSequenceClassification.from_pretrained("Dongjin-kr/ko-reranker")
-=======
-    tokenizer = AutoTokenizer.from_pretrained("BAAI/bge-reranker-v2-m3")
-    model = AutoModelForSequenceClassification.from_pretrained("BAAI/bge-reranker-v2-m3")
->>>>>>> origin/main
     query_document_pairs = [(user_query, result["text"]) for result in initial_results]
     inputs = tokenizer(
     query_document_pairs,
