@@ -77,3 +77,7 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 27500
 ## 라이선스
 
 `api-builder/`의 기본 프로젝트 골격은 Wisenut의 Python FastAPI Template(비상업적 사용 허용, `api-builder/LICENSE` 참고)을 기반으로 합니다. 검색 파이프라인, 하이브리드 서치, 재랭킹, 멀티모달 답변 생성, 프런트엔드 등 실제 챗봇 로직은 팀에서 직접 구현했습니다.
+
+## 추가자료
+- [Demo Video]([링크주소](https://drive.google.com/file/d/15O-AhwV7HF7APj96gnzfiCReyBqAivFa/view))
+- [Project Details]([링크주소](https://drive.google.com/file/d/1a2mdFOSYExacbxDGlOkCvUB4f5HpQ7LP/view))
